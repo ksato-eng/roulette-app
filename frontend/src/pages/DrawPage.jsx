@@ -115,7 +115,7 @@ export default function DrawPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#ffffff' }}>
       {/* ヘッダー */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
         <h1 className="text-xl font-black text-white tracking-wider">🎰 ルーレット抽選</h1>

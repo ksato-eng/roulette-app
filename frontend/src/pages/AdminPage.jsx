@@ -204,9 +204,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-white text-gray-900">
       {/* ヘッダー */}
-      <header className="sticky top-0 z-10 bg-slate-800 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-10 bg-gray-100 border-b border-gray-300 px-4 py-3 flex items-center justify-between">
         <h1 className="text-lg font-black">⚙️ 管理画面</h1>
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-400">累計 <strong className="text-yellow-400">{totalDrawCount}</strong> 回</span>
