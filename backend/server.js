@@ -38,10 +38,7 @@ db.exec(`
     weight REAL NOT NULL DEFAULT 10,
     color TEXT DEFAULT '#808080',
     timeSlots TEXT DEFAULT '[]',
-    triggerAtCount INTEGER,
-    drainrollSound TEXT DEFAULT 'default',
-    winSound TEXT DEFAULT 'fanfare',
-    loseSound TEXT DEFAULT 'buzz'
+    triggerAtCount INTEGER
   );
 
   CREATE TABLE IF NOT EXISTS history (
@@ -91,10 +88,20 @@ try {
   }
 }
 
-// totalDrawCountの初期化
+// Settings の初期化
 const initCount = db.prepare("SELECT value FROM settings WHERE key='totalDrawCount'").get()
 if (!initCount) {
   db.prepare("INSERT INTO settings (key, value) VALUES ('totalDrawCount', '0')").run()
+}
+
+const soundSettings = db.prepare("SELECT value FROM settings WHERE key='soundConfig'").get()
+if (!soundSettings) {
+  const defaultSounds = JSON.stringify({
+    drainrollSound: 'default',
+    winSound: 'fanfare',
+    loseSound: 'buzz'
+  })
+  db.prepare("INSERT INTO settings (key, value) VALUES ('soundConfig', ?)").run(defaultSounds)
 }
 
 // デフォルト景品の追加（テーブルが空の場合）
@@ -174,10 +181,10 @@ function normalizePrize(prize) {
     normalized.timeSlots = '[]'
   }
 
-  // 音声設定のデフォルト化
-  if (!normalized.drainrollSound) normalized.drainrollSound = 'default'
-  if (!normalized.winSound) normalized.winSound = 'fanfare'
-  if (!normalized.loseSound) normalized.loseSound = 'buzz'
+  // 古い音声設定を削除（共通設定に移行）
+  delete normalized.drainrollSound
+  delete normalized.winSound
+  delete normalized.loseSound
 
   return normalized
 }
@@ -189,7 +196,16 @@ app.get('/api/state', (req, res) => {
   const prizes = db.prepare("SELECT * FROM prizes ORDER BY weight ASC").all().map(normalizePrize)
   const countRow = db.prepare("SELECT value FROM settings WHERE key='totalDrawCount'").get()
   const history = db.prepare("SELECT * FROM history ORDER BY count DESC LIMIT 200").all()
-  res.json({ prizes, totalDrawCount: parseInt(countRow.value), history })
+
+  let soundConfig = { drainrollSound: 'default', winSound: 'fanfare', loseSound: 'buzz' }
+  const soundRow = db.prepare("SELECT value FROM settings WHERE key='soundConfig'").get()
+  if (soundRow) {
+    try {
+      soundConfig = JSON.parse(soundRow.value)
+    } catch (e) {}
+  }
+
+  res.json({ prizes, totalDrawCount: parseInt(countRow.value), history, soundConfig })
 })
 
 // 抽選実行（当選者を決定して返す）
@@ -232,26 +248,24 @@ app.get('/api/prizes', (req, res) => {
 })
 
 app.post('/api/prizes', (req, res) => {
-  const { name, initialCount, weight, color, timeSlots, triggerAtCount, drainrollSound, winSound, loseSound } = req.body
+  const { name, initialCount, weight, color, timeSlots, triggerAtCount } = req.body
   const id = uuidv4()
   db.prepare(
-    "INSERT INTO prizes (id, name, initialCount, remaining, weight, color, timeSlots, triggerAtCount, drainrollSound, winSound, loseSound) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO prizes (id, name, initialCount, remaining, weight, color, timeSlots, triggerAtCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
   ).run(
     id, name, initialCount, initialCount, weight, color || '#808080',
-    JSON.stringify(timeSlots || []), triggerAtCount || null,
-    drainrollSound || 'default', winSound || 'fanfare', loseSound || 'buzz'
+    JSON.stringify(timeSlots || []), triggerAtCount || null
   )
   res.json({ id, name, initialCount, remaining: initialCount, weight, color })
 })
 
 app.put('/api/prizes/:id', (req, res) => {
-  const { name, initialCount, remaining, weight, color, timeSlots, triggerAtCount, drainrollSound, winSound, loseSound } = req.body
+  const { name, initialCount, remaining, weight, color, timeSlots, triggerAtCount } = req.body
   db.prepare(
-    "UPDATE prizes SET name=?, initialCount=?, remaining=?, weight=?, color=?, timeSlots=?, triggerAtCount=?, drainrollSound=?, winSound=?, loseSound=? WHERE id=?"
+    "UPDATE prizes SET name=?, initialCount=?, remaining=?, weight=?, color=?, timeSlots=?, triggerAtCount=? WHERE id=?"
   ).run(
     name, initialCount, remaining, weight, color,
     JSON.stringify(timeSlots || []), triggerAtCount || null,
-    drainrollSound || 'default', winSound || 'fanfare', loseSound || 'buzz',
     req.params.id
   )
   res.json({ success: true })
@@ -259,6 +273,29 @@ app.put('/api/prizes/:id', (req, res) => {
 
 app.delete('/api/prizes/:id', (req, res) => {
   db.prepare("DELETE FROM prizes WHERE id=?").run(req.params.id)
+  res.json({ success: true })
+})
+
+// 共通音声設定
+app.get('/api/sound-config', (req, res) => {
+  let soundConfig = { drainrollSound: 'default', winSound: 'fanfare', loseSound: 'buzz' }
+  const soundRow = db.prepare("SELECT value FROM settings WHERE key='soundConfig'").get()
+  if (soundRow) {
+    try {
+      soundConfig = JSON.parse(soundRow.value)
+    } catch (e) {}
+  }
+  res.json(soundConfig)
+})
+
+app.post('/api/sound-config', (req, res) => {
+  const { drainrollSound, winSound, loseSound } = req.body
+  const soundConfig = JSON.stringify({
+    drainrollSound: drainrollSound || 'default',
+    winSound: winSound || 'fanfare',
+    loseSound: loseSound || 'buzz'
+  })
+  db.prepare("UPDATE settings SET value=? WHERE key='soundConfig'").run(soundConfig)
   res.json({ success: true })
 })
 

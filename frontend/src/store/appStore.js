@@ -5,6 +5,7 @@ export const useAppStore = create((set, get) => ({
   prizes: [],
   totalDrawCount: 0,
   history: [],
+  soundConfig: { drainrollSound: 'default', winSound: 'fanfare', loseSound: 'buzz' },
   loading: false,
   error: null,
 
@@ -12,7 +13,13 @@ export const useAppStore = create((set, get) => ({
     set({ loading: true, error: null })
     try {
       const data = await api.getState()
-      set({ prizes: data.prizes, totalDrawCount: data.totalDrawCount, history: data.history, loading: false })
+      set({
+        prizes: data.prizes,
+        totalDrawCount: data.totalDrawCount,
+        history: data.history,
+        soundConfig: data.soundConfig || { drainrollSound: 'default', winSound: 'fanfare', loseSound: 'buzz' },
+        loading: false
+      })
     } catch (e) {
       set({ error: e.message, loading: false })
     }
@@ -54,5 +61,10 @@ export const useAppStore = create((set, get) => ({
   resetAll: async () => {
     await api.resetAll()
     await get().fetchState()
+  },
+
+  updateSoundConfig: async (data) => {
+    await api.updateSoundConfig(data)
+    set({ soundConfig: data })
   },
 }))

@@ -28,4 +28,7 @@ export const api = {
   getHistory: () => req('GET', '/history'),
   clearHistory: () => req('DELETE', '/history'),
   resetAll: () => req('POST', '/reset'),
+
+  getSoundConfig: () => req('GET', '/sound-config'),
+  updateSoundConfig: (data) => req('POST', '/sound-config', data),
 }

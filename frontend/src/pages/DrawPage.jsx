@@ -10,7 +10,7 @@ import { useSound } from '../hooks/useSound'
 const PHASE = { IDLE: 'idle', SPINNING: 'spinning', STOPPING: 'stopping', RESULT: 'result' }
 
 export default function DrawPage() {
-  const { prizes, totalDrawCount, fetchState, pickWinner, confirmDraw, loading } = useAppStore()
+  const { prizes, soundConfig, totalDrawCount, fetchState, pickWinner, confirmDraw, loading } = useAppStore()
   const [phase, setPhase] = useState(PHASE.IDLE)
   const [pendingPrize, setPendingPrize] = useState(null)   // ルーレットの停止目標
   const pendingPrizeRef = useRef(null)                     // 常に最新値を保持
@@ -38,10 +38,10 @@ export default function DrawPage() {
     setPhase(PHASE.SPINNING)
     canvas._startSpin()
 
-    // 最初の景品の音声設定を使用
-    const soundType = prizes.length > 0 ? (prizes[0].drainrollSound || 'default') : 'default'
+    // 共通設定からドラムロール音を取得
+    const soundType = soundConfig?.drainrollSound || 'default'
     startDrumroll(soundType)
-  }, [phase, startDrumroll, prizes])
+  }, [phase, startDrumroll, soundConfig])
 
   const handleStop = useCallback(async () => {
     if (phase !== PHASE.SPINNING) return
@@ -75,18 +75,17 @@ export default function DrawPage() {
       pendingPrizeRef.current = null
       setPendingPrize(null)
 
-      // 当選音の再生（景品の設定に基づく）
+      // 当選音の再生（共通設定から取得）
       const allPrizes = useAppStore.getState().prizes
       const sorted = [...allPrizes].sort((a, b) => a.weight - b.weight)
       const rank = sorted.findIndex(p => p.id === prize.id)
       const isLose = prize.weight === Math.max(...allPrizes.map(p => p.weight))
 
+      const currentSoundConfig = useAppStore.getState().soundConfig
       if (isLose) {
-        playLose(prize.loseSound || 'buzz')
-      } else if (rank < 2) {
-        playWin(prize.winSound || 'fanfare')
+        playLose(currentSoundConfig.loseSound || 'buzz')
       } else {
-        playWin(prize.winSound || 'fanfare')
+        playWin(currentSoundConfig.winSound || 'fanfare')
       }
     } catch (e) {
       console.error(e)
