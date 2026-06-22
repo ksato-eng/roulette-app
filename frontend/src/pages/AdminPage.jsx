@@ -30,6 +30,18 @@ const SOUND_OPTIONS = {
 }
 
 function PrizeForm({ initial, onSave, onCancel }) {
+  // 既存データの互換性処理
+  let parsedInitial = { ...initial }
+  if (initial?.timeSlots) {
+    try {
+      if (typeof initial.timeSlots === 'string') {
+        parsedInitial.timeSlots = JSON.parse(initial.timeSlots)
+      }
+    } catch (e) {
+      parsedInitial.timeSlots = []
+    }
+  }
+
   const [form, setForm] = useState({
     name: '',
     initialCount: 10,
@@ -41,7 +53,7 @@ function PrizeForm({ initial, onSave, onCancel }) {
     drainrollSound: 'default',
     winSound: 'fanfare',
     loseSound: 'buzz',
-    ...initial,
+    ...parsedInitial,
   })
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))

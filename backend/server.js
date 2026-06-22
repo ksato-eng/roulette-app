@@ -164,11 +164,29 @@ function pickWinner(prizes, nextCount) {
   return available[available.length - 1]
 }
 
+// ── データ正規化（古い形式を新しい形式に変換） ──────────────────────────
+
+function normalizePrize(prize) {
+  const normalized = { ...prize }
+
+  // timeSlots のデフォルト化
+  if (!normalized.timeSlots) {
+    normalized.timeSlots = '[]'
+  }
+
+  // 音声設定のデフォルト化
+  if (!normalized.drainrollSound) normalized.drainrollSound = 'default'
+  if (!normalized.winSound) normalized.winSound = 'fanfare'
+  if (!normalized.loseSound) normalized.loseSound = 'buzz'
+
+  return normalized
+}
+
 // ── API エンドポイント ──────────────────────────────────────────────
 
 // 全体状態の取得
 app.get('/api/state', (req, res) => {
-  const prizes = db.prepare("SELECT * FROM prizes ORDER BY weight ASC").all()
+  const prizes = db.prepare("SELECT * FROM prizes ORDER BY weight ASC").all().map(normalizePrize)
   const countRow = db.prepare("SELECT value FROM settings WHERE key='totalDrawCount'").get()
   const history = db.prepare("SELECT * FROM history ORDER BY count DESC LIMIT 200").all()
   res.json({ prizes, totalDrawCount: parseInt(countRow.value), history })
@@ -203,14 +221,14 @@ app.post('/api/draw/confirm', (req, res) => {
     uuidv4(), newCount, prize.name, new Date().toISOString()
   )
 
-  const updatedPrizes = db.prepare("SELECT * FROM prizes ORDER BY weight ASC").all()
+  const updatedPrizes = db.prepare("SELECT * FROM prizes ORDER BY weight ASC").all().map(normalizePrize)
   res.json({ success: true, totalDrawCount: newCount, prizes: updatedPrizes })
 })
 
 // ── 景品管理 ──────────────────────────────────────────────────────
 
 app.get('/api/prizes', (req, res) => {
-  res.json(db.prepare("SELECT * FROM prizes ORDER BY weight ASC").all())
+  res.json(db.prepare("SELECT * FROM prizes ORDER BY weight ASC").all().map(normalizePrize))
 })
 
 app.post('/api/prizes', (req, res) => {
