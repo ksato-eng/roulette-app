@@ -4,7 +4,7 @@ services:
     runtime: node
     region: tokyo
     plan: free
-    startCommand: cd frontend && npm install && npm run build && cd ../backend && npm install && node server.js
+    startCommand: cd backend && npm install && node server.js
     envVars:
       - key: NODE_ENV
         value: production
