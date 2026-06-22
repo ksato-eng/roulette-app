@@ -1,0 +1,332 @@
+import { useEffect, useState } from 'react'
+import { useAppStore } from '../store/appStore'
+
+const ADMIN_PASSWORD = 'admin1234'
+
+const DEFAULT_COLORS = [
+  '#FFD700', '#C0C0C0', '#CD7F32', '#4CAF50',
+  '#2196F3', '#9C27B0', '#FF5722', '#00BCD4',
+  '#FF9800', '#9CA3AF',
+]
+
+function PrizeForm({ initial, onSave, onCancel }) {
+  const [form, setForm] = useState({
+    name: '',
+    initialCount: 10,
+    remaining: 10,
+    weight: 10,
+    color: '#808080',
+    unlockTime: '',
+    untilTime: '',
+    triggerAtCount: '',
+    ...initial,
+  })
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    onSave({
+      ...form,
+      initialCount: Number(form.initialCount),
+      remaining: Number(form.remaining),
+      weight: Number(form.weight),
+      triggerAtCount: form.triggerAtCount ? Number(form.triggerAtCount) : null,
+      unlockTime: form.unlockTime || null,
+      untilTime: form.untilTime || null,
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-slate-700 rounded-xl p-4 space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <label className="col-span-2">
+          <span className="text-xs text-gray-400">賞名 *</span>
+          <input className="inp" value={form.name} onChange={e => set('name', e.target.value)} required />
+        </label>
+        <label>
+          <span className="text-xs text-gray-400">初期数量</span>
+          <input type="number" min="1" className="inp" value={form.initialCount}
+            onChange={e => { set('initialCount', e.target.value); if (!initial) set('remaining', e.target.value) }} />
+        </label>
+        <label>
+          <span className="text-xs text-gray-400">残数量</span>
+          <input type="number" min="0" className="inp" value={form.remaining}
+            onChange={e => set('remaining', e.target.value)} />
+        </label>
+        <label>
+          <span className="text-xs text-gray-400">重み（大=出やすい）</span>
+          <input type="number" min="0.1" step="0.1" className="inp" value={form.weight}
+            onChange={e => set('weight', e.target.value)} />
+        </label>
+        <label>
+          <span className="text-xs text-gray-400">色</span>
+          <div className="flex gap-2 items-center mt-1">
+            <input type="color" value={form.color} onChange={e => set('color', e.target.value)}
+              className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent" />
+            <div className="flex flex-wrap gap-1">
+              {DEFAULT_COLORS.map(c => (
+                <button key={c} type="button" onClick={() => set('color', c)}
+                  className="w-5 h-5 rounded-full border-2"
+                  style={{ background: c, borderColor: form.color === c ? 'white' : 'transparent' }} />
+              ))}
+            </div>
+          </div>
+        </label>
+        <label>
+          <span className="text-xs text-gray-400">〇人目で必ず当選</span>
+          <input type="number" min="1" placeholder="例: 100" className="inp"
+            value={form.triggerAtCount || ''} onChange={e => set('triggerAtCount', e.target.value)} />
+        </label>
+        <label>
+          <span className="text-xs text-gray-400">解放開始時刻</span>
+          <input type="time" className="inp" value={form.unlockTime || ''}
+            onChange={e => set('unlockTime', e.target.value)} />
+        </label>
+        <label>
+          <span className="text-xs text-gray-400">解放終了時刻</span>
+          <input type="time" className="inp" value={form.untilTime || ''}
+            onChange={e => set('untilTime', e.target.value)} />
+        </label>
+      </div>
+      <div className="flex gap-2">
+        <button type="submit"
+          className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-sm">
+          保存
+        </button>
+        <button type="button" onClick={onCancel}
+          className="flex-1 py-2 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-lg text-sm">
+          キャンセル
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function PrizeRow({ prize, onEdit, onDelete }) {
+  return (
+    <div className="flex items-center gap-3 bg-slate-700 rounded-lg px-3 py-2">
+      <div className="w-4 h-4 rounded-full shrink-0" style={{ background: prize.color }} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-bold text-white">{prize.name}</span>
+          {prize.triggerAtCount && (
+            <span className="text-xs bg-yellow-500/20 text-yellow-300 px-1.5 rounded">
+              {prize.triggerAtCount}人目
+            </span>
+          )}
+          {prize.unlockTime && (
+            <span className="text-xs bg-blue-500/20 text-blue-300 px-1.5 rounded">
+              {prize.unlockTime}{prize.untilTime ? `〜${prize.untilTime}` : '〜'}
+            </span>
+          )}
+        </div>
+        <div className="text-xs text-gray-400 mt-0.5">
+          残{prize.remaining}/{prize.initialCount}個 · 重み{prize.weight}
+        </div>
+      </div>
+      <div className="flex gap-2 shrink-0">
+        <button onClick={() => onEdit(prize)}
+          className="text-xs px-2 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white">編集</button>
+        <button onClick={() => onDelete(prize.id)}
+          className="text-xs px-2 py-1 bg-red-900/60 hover:bg-red-700 rounded text-red-300">削除</button>
+      </div>
+    </div>
+  )
+}
+
+function exportCSV(history) {
+  const header = '抽選番号,日時,当選賞\n'
+  const rows = history.map(h => `${h.count},${h.drawnAt},${h.prizeName}`).join('\n')
+  const blob = new Blob(['﻿' + header + rows], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `roulette_history_${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+export default function AdminPage() {
+  const [authed, setAuthed] = useState(false)
+  const [pwInput, setPwInput] = useState('')
+  const [pwError, setPwError] = useState(false)
+  const { prizes, history, totalDrawCount, loading, fetchState, createPrize, updatePrize, deletePrize, clearHistory, resetAll } = useAppStore()
+  const [editingPrize, setEditingPrize] = useState(null)  // null | prize | 'new'
+  const [activeTab, setActiveTab] = useState('prizes')
+
+  useEffect(() => {
+    if (authed) fetchState()
+  }, [authed])
+
+  const handleLogin = (e) => {
+    e.preventDefault()
+    if (pwInput === ADMIN_PASSWORD) {
+      setAuthed(true)
+    } else {
+      setPwError(true)
+      setPwInput('')
+    }
+  }
+
+  if (!authed) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
+        <div className="w-full max-w-sm bg-slate-800 rounded-2xl p-8 shadow-xl">
+          <h1 className="text-2xl font-black text-white text-center mb-6">🔐 管理画面</h1>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input
+              type="password"
+              placeholder="パスワード"
+              value={pwInput}
+              onChange={e => { setPwInput(e.target.value); setPwError(false) }}
+              className="inp"
+              autoFocus
+            />
+            {pwError && <p className="text-red-400 text-sm">パスワードが違います</p>}
+            <button type="submit" className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl">
+              ログイン
+            </button>
+          </form>
+          <p className="text-gray-500 text-xs text-center mt-4">初期パスワード: admin1234</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-white">
+      {/* ヘッダー */}
+      <header className="sticky top-0 z-10 bg-slate-800 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
+        <h1 className="text-lg font-black">⚙️ 管理画面</h1>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-400">累計 <strong className="text-yellow-400">{totalDrawCount}</strong> 回</span>
+          <a href="/" className="text-xs text-gray-400 hover:text-white border border-slate-600 px-2 py-1 rounded">
+            ← 抽選へ
+          </a>
+        </div>
+      </header>
+
+      {/* タブ */}
+      <div className="flex border-b border-slate-700">
+        {[['prizes', '景品管理'], ['history', '抽選履歴'], ['danger', 'リセット']].map(([id, label]) => (
+          <button key={id} onClick={() => setActiveTab(id)}
+            className={`flex-1 py-3 text-sm font-bold transition-colors ${
+              activeTab === id ? 'text-white border-b-2 border-blue-500' : 'text-gray-400 hover:text-white'
+            }`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="max-w-2xl mx-auto p-4">
+
+        {/* 景品管理タブ */}
+        {activeTab === 'prizes' && (
+          <div className="space-y-3">
+            <button
+              onClick={() => setEditingPrize('new')}
+              className="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-xl"
+            >
+              + 景品を追加
+            </button>
+
+            {editingPrize === 'new' && (
+              <PrizeForm
+                onSave={async (data) => { await createPrize(data); setEditingPrize(null) }}
+                onCancel={() => setEditingPrize(null)}
+              />
+            )}
+
+            {loading && <p className="text-center text-gray-400 py-4">読み込み中...</p>}
+
+            {prizes.map(p => (
+              <div key={p.id}>
+                {editingPrize?.id === p.id ? (
+                  <PrizeForm
+                    initial={p}
+                    onSave={async (data) => { await updatePrize(p.id, data); setEditingPrize(null) }}
+                    onCancel={() => setEditingPrize(null)}
+                  />
+                ) : (
+                  <PrizeRow
+                    prize={p}
+                    onEdit={setEditingPrize}
+                    onDelete={async (id) => {
+                      if (confirm(`「${p.name}」を削除しますか？`)) await deletePrize(id)
+                    }}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 抽選履歴タブ */}
+        {activeTab === 'history' && (
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-gray-400">全{history.length}件</p>
+              <button onClick={() => exportCSV(history)}
+                className="text-sm px-3 py-1.5 bg-blue-700 hover:bg-blue-600 rounded-lg font-bold">
+                CSVエクスポート
+              </button>
+            </div>
+
+            <div className="space-y-1 max-h-[60vh] overflow-y-auto">
+              {history.length === 0 && (
+                <p className="text-center text-gray-500 py-8">履歴がありません</p>
+              )}
+              {history.map(h => (
+                <div key={h.id} className="flex items-center gap-3 bg-slate-700 rounded-lg px-3 py-2">
+                  <span className="text-gray-400 text-sm w-12 text-right shrink-0">#{h.count}</span>
+                  <span className="font-bold flex-1">{h.prizeName}</span>
+                  <span className="text-xs text-gray-400">
+                    {new Date(h.drawnAt).toLocaleString('ja-JP', {
+                      month: '2-digit', day: '2-digit',
+                      hour: '2-digit', minute: '2-digit'
+                    })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* リセットタブ */}
+        {activeTab === 'danger' && (
+          <div className="space-y-4 py-4">
+            <div className="bg-slate-800 rounded-xl p-4 space-y-3">
+              <h2 className="font-bold text-yellow-400">⚠️ 危険な操作</h2>
+              <p className="text-sm text-gray-400">操作は元に戻せません。慎重に実行してください。</p>
+
+              <button
+                onClick={async () => {
+                  if (confirm('履歴のみクリアしますか？（景品の残数はリセットしません）')) {
+                    await clearHistory()
+                    alert('履歴をクリアしました')
+                  }
+                }}
+                className="w-full py-3 bg-orange-700/60 hover:bg-orange-600 text-white font-bold rounded-xl"
+              >
+                履歴のみクリア
+              </button>
+
+              <button
+                onClick={async () => {
+                  if (confirm('全データをリセットしますか？\n・景品在庫を初期値に戻す\n・抽選履歴を全削除\n・累計回数をリセット')) {
+                    await resetAll()
+                    alert('リセット完了しました')
+                  }
+                }}
+                className="w-full py-3 bg-red-700/80 hover:bg-red-600 text-white font-bold rounded-xl"
+              >
+                全データリセット
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
