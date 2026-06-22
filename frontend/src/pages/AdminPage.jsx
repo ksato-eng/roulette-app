@@ -234,9 +234,9 @@ export default function AdminPage() {
         {activeTab === 'prizes' && (
           <div className="space-y-3">
             {/* 説明 */}
-            <div className="bg-blue-900/30 border border-blue-500/50 rounded-lg p-3 mb-4">
-              <h3 className="font-bold text-blue-300 text-sm mb-2">📖 景品管理ガイド</h3>
-              <ul className="text-xs text-gray-300 space-y-1">
+            <div className="bg-blue-50 border border-blue-300 rounded-lg p-3 mb-4">
+              <h3 className="font-bold text-blue-900 text-sm mb-2">📖 設定ガイド</h3>
+              <ul className="text-xs text-gray-800 space-y-1">
                 <li>✓ <strong>重み</strong> - 数字が大きいほど当選しやすい（例：ハズレ=60, 3等=10, 2等=3, 1等=1）</li>
                 <li>✓ <strong>〇人目で当選</strong> - 指定した抽選回数で必ずその景品が当選</li>
                 <li>✓ <strong>時間帯設定</strong> - 特定時間のみ景品を有効化（例：イベント盛り上げ用）</li>
@@ -285,9 +285,9 @@ export default function AdminPage() {
         {activeTab === 'history' && (
           <div className="space-y-3">
             {/* 説明 */}
-            <div className="bg-blue-900/30 border border-blue-500/50 rounded-lg p-3 mb-4">
-              <h3 className="font-bold text-blue-300 text-sm mb-2">📊 抽選履歴について</h3>
-              <ul className="text-xs text-gray-300 space-y-1">
+            <div className="bg-blue-50 border border-blue-300 rounded-lg p-3 mb-4">
+              <h3 className="font-bold text-blue-900 text-sm mb-2">📊 抽選履歴について</h3>
+              <ul className="text-xs text-gray-800 space-y-1">
                 <li>✓ すべての抽選結果が記録されます</li>
                 <li>✓ CSVエクスポートで Excel に取り込み可能</li>
                 <li>✓ リセット時に履歴のみクリアすることも可能</li>
@@ -326,9 +326,9 @@ export default function AdminPage() {
         {activeTab === 'danger' && (
           <div className="space-y-4 py-4">
             {/* 説明 */}
-            <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-3 mb-4">
-              <h3 className="font-bold text-red-300 text-sm mb-2">📋 リセット操作について</h3>
-              <ul className="text-xs text-gray-300 space-y-1">
+            <div className="bg-red-50 border border-red-300 rounded-lg p-3 mb-4">
+              <h3 className="font-bold text-red-900 text-sm mb-2">📋 リセット操作について</h3>
+              <ul className="text-xs text-gray-800 space-y-1">
                 <li>✓ <strong>履歴のみクリア</strong> - 抽選記録だけ削除（景品在庫は変わらない）</li>
                 <li>✓ <strong>全データリセット</strong> - 在庫・履歴・累計回数すべてを初期値に戻す</li>
                 <li>❌ 操作は元に戻せません。本当に必要な場合だけ実行してください</li>
