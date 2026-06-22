@@ -58,6 +58,7 @@ function PrizeForm({ initial, onSave, onCancel }) {
           <span className="text-xs text-gray-400">重み（大=出やすい）</span>
           <input type="number" min="0.1" step="0.1" className="inp" value={form.weight}
             onChange={e => set('weight', e.target.value)} />
+          <span className="text-xs text-gray-500 mt-1 block">💡 例: 1等=1, 2等=3, 3等=10, ハズレ=60</span>
         </label>
         <label>
           <span className="text-xs text-gray-400">色</span>
@@ -77,16 +78,24 @@ function PrizeForm({ initial, onSave, onCancel }) {
           <span className="text-xs text-gray-400">〇人目で必ず当選</span>
           <input type="number" min="1" placeholder="例: 100" className="inp"
             value={form.triggerAtCount || ''} onChange={e => set('triggerAtCount', e.target.value)} />
+          <span className="text-xs text-gray-500 mt-1 block">💡 100 と入力すると、100人目の抽選でこの景品が確定当選</span>
         </label>
-        <label>
-          <span className="text-xs text-gray-400">解放開始時刻</span>
-          <input type="time" className="inp" value={form.unlockTime || ''}
-            onChange={e => set('unlockTime', e.target.value)} />
-        </label>
-        <label>
-          <span className="text-xs text-gray-400">解放終了時刻</span>
-          <input type="time" className="inp" value={form.untilTime || ''}
-            onChange={e => set('untilTime', e.target.value)} />
+        <label className="col-span-2">
+          <span className="text-xs text-gray-400">⏰ 時間帯による解放設定</span>
+          <span className="text-xs text-gray-500 block mb-2">指定した時間帯のみこの景品を有効にします（空欄で常に有効）</span>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <span className="text-xs text-gray-400 block">解放開始時刻</span>
+              <input type="time" className="inp" value={form.unlockTime || ''}
+                onChange={e => set('unlockTime', e.target.value)} />
+            </div>
+            <div>
+              <span className="text-xs text-gray-400 block">解放終了時刻</span>
+              <input type="time" className="inp" value={form.untilTime || ''}
+                onChange={e => set('untilTime', e.target.value)} />
+            </div>
+          </div>
+          <span className="text-xs text-gray-500 mt-1 block">💡 例: 14:00～17:00 で「その時間帯のみ有効」</span>
         </label>
       </div>
       <div className="flex gap-2">
@@ -224,6 +233,16 @@ export default function AdminPage() {
         {/* 景品管理タブ */}
         {activeTab === 'prizes' && (
           <div className="space-y-3">
+            {/* 説明 */}
+            <div className="bg-blue-900/30 border border-blue-500/50 rounded-lg p-3 mb-4">
+              <h3 className="font-bold text-blue-300 text-sm mb-2">📖 景品管理ガイド</h3>
+              <ul className="text-xs text-gray-300 space-y-1">
+                <li>✓ <strong>重み</strong> - 数字が大きいほど当選しやすい（例：ハズレ=60, 3等=10, 2等=3, 1等=1）</li>
+                <li>✓ <strong>〇人目で当選</strong> - 指定した抽選回数で必ずその景品が当選</li>
+                <li>✓ <strong>時間帯設定</strong> - 特定時間のみ景品を有効化（例：イベント盛り上げ用）</li>
+              </ul>
+            </div>
+
             <button
               onClick={() => setEditingPrize('new')}
               className="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-xl"
@@ -265,6 +284,16 @@ export default function AdminPage() {
         {/* 抽選履歴タブ */}
         {activeTab === 'history' && (
           <div className="space-y-3">
+            {/* 説明 */}
+            <div className="bg-blue-900/30 border border-blue-500/50 rounded-lg p-3 mb-4">
+              <h3 className="font-bold text-blue-300 text-sm mb-2">📊 抽選履歴について</h3>
+              <ul className="text-xs text-gray-300 space-y-1">
+                <li>✓ すべての抽選結果が記録されます</li>
+                <li>✓ CSVエクスポートで Excel に取り込み可能</li>
+                <li>✓ リセット時に履歴のみクリアすることも可能</li>
+              </ul>
+            </div>
+
             <div className="flex justify-between items-center">
               <p className="text-sm text-gray-400">全{history.length}件</p>
               <button onClick={() => exportCSV(history)}
@@ -296,6 +325,16 @@ export default function AdminPage() {
         {/* リセットタブ */}
         {activeTab === 'danger' && (
           <div className="space-y-4 py-4">
+            {/* 説明 */}
+            <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-3 mb-4">
+              <h3 className="font-bold text-red-300 text-sm mb-2">📋 リセット操作について</h3>
+              <ul className="text-xs text-gray-300 space-y-1">
+                <li>✓ <strong>履歴のみクリア</strong> - 抽選記録だけ削除（景品在庫は変わらない）</li>
+                <li>✓ <strong>全データリセット</strong> - 在庫・履歴・累計回数すべてを初期値に戻す</li>
+                <li>❌ 操作は元に戻せません。本当に必要な場合だけ実行してください</li>
+              </ul>
+            </div>
+
             <div className="bg-slate-800 rounded-xl p-4 space-y-3">
               <h2 className="font-bold text-yellow-400">⚠️ 危険な操作</h2>
               <p className="text-sm text-gray-400">操作は元に戻せません。慎重に実行してください。</p>
