@@ -18,7 +18,7 @@ export default function DrawPage() {
   const [resultCount, setResultCount] = useState(0)
   // Rouletteコンポーネントのcanvas要素を受け取るref
   const canvasRef = useRef(null)
-  const { startDrumroll, stopDrumroll, playFanfare, playChime, playBuzz } = useSound()
+  const { startDrumroll, stopDrumroll, playWin, playLose } = useSound()
 
   useEffect(() => { fetchState() }, [fetchState])
 
@@ -37,8 +37,11 @@ export default function DrawPage() {
 
     setPhase(PHASE.SPINNING)
     canvas._startSpin()
-    startDrumroll()
-  }, [phase, startDrumroll])
+
+    // 最初の景品の音声設定を使用
+    const soundType = prizes.length > 0 ? (prizes[0].drainrollSound || 'default') : 'default'
+    startDrumroll(soundType)
+  }, [phase, startDrumroll, prizes])
 
   const handleStop = useCallback(async () => {
     if (phase !== PHASE.SPINNING) return
@@ -72,18 +75,24 @@ export default function DrawPage() {
       pendingPrizeRef.current = null
       setPendingPrize(null)
 
-      // 当選音の再生
+      // 当選音の再生（景品の設定に基づく）
       const allPrizes = useAppStore.getState().prizes
       const sorted = [...allPrizes].sort((a, b) => a.weight - b.weight)
       const rank = sorted.findIndex(p => p.id === prize.id)
-      if (rank < 2) playFanfare()
-      else if (prize.weight === Math.max(...allPrizes.map(p => p.weight))) playBuzz()
-      else playChime()
+      const isLose = prize.weight === Math.max(...allPrizes.map(p => p.weight))
+
+      if (isLose) {
+        playLose(prize.loseSound || 'buzz')
+      } else if (rank < 2) {
+        playWin(prize.winSound || 'fanfare')
+      } else {
+        playWin(prize.winSound || 'fanfare')
+      }
     } catch (e) {
       console.error(e)
       setPhase(PHASE.IDLE)
     }
-  }, [confirmDraw, playFanfare, playChime, playBuzz])
+  }, [confirmDraw, playWin, playLose])
 
   const handleCloseResult = () => {
     setResultPrize(null)
@@ -128,28 +137,32 @@ export default function DrawPage() {
 
       {/* ルーレット */}
       <div className="flex-1 flex flex-col items-center justify-center py-4 px-4">
-        <div className="w-full max-w-[500px]">
+        {/* ルーレット + ボタンを重ねる */}
+        <div className="relative w-full max-w-[500px]">
           <Roulette
             prizes={prizes}
             pendingPrize={pendingPrize}
             onAnimationComplete={handleAnimationComplete}
             canvasRef={canvasRef}
           />
+
+          {/* ルーレット中央のボタン */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <button
+              onClick={handleBtnClick}
+              disabled={phase === PHASE.STOPPING || availablePrizes.length === 0}
+              className={`btn-start pointer-events-auto w-32 h-32 rounded-full font-black text-lg text-white
+                bg-gradient-to-b ${btnColor} shadow-2xl
+                disabled:opacity-50 disabled:cursor-not-allowed
+                flex items-center justify-center text-center leading-tight`}
+            >
+              {availablePrizes.length === 0 ? '景品\nなし' : btnLabel}
+            </button>
+          </div>
         </div>
 
         {/* 景品凡例 */}
         <PrizeLegend prizes={prizes} />
-
-        {/* STARTボタン */}
-        <button
-          onClick={handleBtnClick}
-          disabled={phase === PHASE.STOPPING || availablePrizes.length === 0}
-          className={`btn-start mt-6 w-full max-w-xs py-5 rounded-2xl font-black text-2xl text-white
-            bg-gradient-to-b ${btnColor} shadow-xl
-            disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          {availablePrizes.length === 0 ? '景品なし' : btnLabel}
-        </button>
 
         {availablePrizes.length === 0 && prizes.length > 0 && (
           <p className="mt-3 text-red-400 text-sm">全景品の在庫がなくなりました</p>

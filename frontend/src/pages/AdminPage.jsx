@@ -9,6 +9,26 @@ const DEFAULT_COLORS = [
   '#FF9800', '#9CA3AF',
 ]
 
+// 音声選択肢
+const SOUND_OPTIONS = {
+  drainrollSound: [
+    { value: 'default', label: 'ドラムロール（デフォルト）' },
+    { value: 'electronic', label: 'ドラムロール（電子音）' },
+    { value: 'synth', label: 'ドラムロール（シンセ）' },
+  ],
+  winSound: [
+    { value: 'fanfare', label: 'ファンファーレ（デフォルト）' },
+    { value: 'bell', label: 'ベル音' },
+    { value: 'chime', label: 'チャイム' },
+    { value: 'sparkle', label: 'キラキラ音' },
+  ],
+  loseSound: [
+    { value: 'buzz', label: 'ブザー（デフォルト）' },
+    { value: 'sad', label: '悲しい音' },
+    { value: 'fail', label: 'エラー音' },
+  ]
+}
+
 function PrizeForm({ initial, onSave, onCancel }) {
   const [form, setForm] = useState({
     name: '',
@@ -16,13 +36,31 @@ function PrizeForm({ initial, onSave, onCancel }) {
     remaining: 10,
     weight: 10,
     color: '#808080',
-    unlockTime: '',
-    untilTime: '',
+    timeSlots: [],
     triggerAtCount: '',
+    drainrollSound: 'default',
+    winSound: 'fanfare',
+    loseSound: 'buzz',
     ...initial,
   })
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleAddTimeSlot = () => {
+    if (form.timeSlots.length < 3) {
+      set('timeSlots', [...form.timeSlots, { unlockTime: '09:00', untilTime: '10:00' }])
+    }
+  }
+
+  const handleUpdateTimeSlot = (idx, slot) => {
+    const updated = [...form.timeSlots]
+    updated[idx] = slot
+    set('timeSlots', updated)
+  }
+
+  const handleRemoveTimeSlot = (idx) => {
+    set('timeSlots', form.timeSlots.filter((_, i) => i !== idx))
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -32,14 +70,17 @@ function PrizeForm({ initial, onSave, onCancel }) {
       remaining: Number(form.remaining),
       weight: Number(form.weight),
       triggerAtCount: form.triggerAtCount ? Number(form.triggerAtCount) : null,
-      unlockTime: form.unlockTime || null,
-      untilTime: form.untilTime || null,
+      timeSlots: form.timeSlots,
+      drainrollSound: form.drainrollSound || 'default',
+      winSound: form.winSound || 'fanfare',
+      loseSound: form.loseSound || 'buzz',
     })
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-slate-700 rounded-xl p-4 space-y-3">
+    <form onSubmit={handleSubmit} className="bg-slate-700 rounded-xl p-4 space-y-4">
       <div className="grid grid-cols-2 gap-3">
+        {/* 基本情報 */}
         <label className="col-span-2">
           <span className="text-xs text-gray-400">賞名 *</span>
           <input className="inp" value={form.name} onChange={e => set('name', e.target.value)} required />
@@ -60,7 +101,9 @@ function PrizeForm({ initial, onSave, onCancel }) {
             onChange={e => set('weight', e.target.value)} />
           <span className="text-xs text-gray-500 mt-1 block">💡 例: 1等=1, 2等=3, 3等=10, ハズレ=60</span>
         </label>
-        <label>
+
+        {/* 色選択 */}
+        <label className="col-span-2">
           <span className="text-xs text-gray-400">色</span>
           <div className="flex gap-2 items-center mt-1">
             <input type="color" value={form.color} onChange={e => set('color', e.target.value)}
@@ -74,31 +117,85 @@ function PrizeForm({ initial, onSave, onCancel }) {
             </div>
           </div>
         </label>
-        <label>
+
+        {/* 確定当選 */}
+        <label className="col-span-2">
           <span className="text-xs text-gray-400">〇人目で必ず当選</span>
           <input type="number" min="1" placeholder="例: 100" className="inp"
             value={form.triggerAtCount || ''} onChange={e => set('triggerAtCount', e.target.value)} />
           <span className="text-xs text-gray-500 mt-1 block">💡 100 と入力すると、100人目の抽選でこの景品が確定当選</span>
         </label>
-        <label className="col-span-2">
-          <span className="text-xs text-gray-400">⏰ 時間帯による解放設定</span>
-          <span className="text-xs text-gray-500 block mb-2">指定した時間帯のみこの景品を有効にします（空欄で常に有効）</span>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <span className="text-xs text-gray-400 block">解放開始時刻</span>
-              <input type="time" className="inp" value={form.unlockTime || ''}
-                onChange={e => set('unlockTime', e.target.value)} />
-            </div>
-            <div>
-              <span className="text-xs text-gray-400 block">解放終了時刻</span>
-              <input type="time" className="inp" value={form.untilTime || ''}
-                onChange={e => set('untilTime', e.target.value)} />
-            </div>
+      </div>
+
+      {/* 複数時間帯設定 */}
+      <div className="border-t border-slate-600 pt-3">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-xs text-gray-400 block">⏰ 時間帯による解放設定（最大3個）</span>
+          <button type="button" onClick={handleAddTimeSlot} disabled={form.timeSlots.length >= 3}
+            className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-500 disabled:cursor-not-allowed text-white rounded">
+            + 追加
+          </button>
+        </div>
+        <span className="text-xs text-gray-500 block mb-2">例：午前10:00～11:00、午後14:00～15:00に出すように設定できます</span>
+
+        {form.timeSlots.length === 0 ? (
+          <p className="text-xs text-gray-500 italic">設定なし（常に有効）</p>
+        ) : (
+          <div className="space-y-2">
+            {form.timeSlots.map((slot, idx) => (
+              <div key={idx} className="flex gap-2 items-end bg-slate-600 p-2 rounded">
+                <div className="flex-1">
+                  <label className="text-xs text-gray-400 block mb-1">開始時刻</label>
+                  <input type="time" className="inp" value={slot.unlockTime || ''}
+                    onChange={e => handleUpdateTimeSlot(idx, { ...slot, unlockTime: e.target.value })} />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-gray-400 block mb-1">終了時刻</label>
+                  <input type="time" className="inp" value={slot.untilTime || ''}
+                    onChange={e => handleUpdateTimeSlot(idx, { ...slot, untilTime: e.target.value })} />
+                </div>
+                <button type="button" onClick={() => handleRemoveTimeSlot(idx)}
+                  className="px-2 py-1 bg-red-900/60 hover:bg-red-700 text-red-300 rounded text-xs font-bold">
+                  削除
+                </button>
+              </div>
+            ))}
           </div>
-          <span className="text-xs text-gray-500 mt-1 block">💡 例: 14:00～17:00 で「その時間帯のみ有効」</span>
+        )}
+      </div>
+
+      {/* 音声設定 */}
+      <div className="border-t border-slate-600 pt-3 space-y-2">
+        <label className="col-span-2 block">
+          <span className="text-xs text-gray-400">🔊 ドラムロール音</span>
+          <select value={form.drainrollSound} onChange={e => set('drainrollSound', e.target.value)}
+            className="inp">
+            {SOUND_OPTIONS.drainrollSound.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="col-span-2 block">
+          <span className="text-xs text-gray-400">🎉 当選音</span>
+          <select value={form.winSound} onChange={e => set('winSound', e.target.value)}
+            className="inp">
+            {SOUND_OPTIONS.winSound.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="col-span-2 block">
+          <span className="text-xs text-gray-400">😅 ハズレ音</span>
+          <select value={form.loseSound} onChange={e => set('loseSound', e.target.value)}
+            className="inp">
+            {SOUND_OPTIONS.loseSound.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
         </label>
       </div>
-      <div className="flex gap-2">
+
+      <div className="flex gap-2 pt-2 border-t border-slate-600">
         <button type="submit"
           className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-sm">
           保存
@@ -113,6 +210,11 @@ function PrizeForm({ initial, onSave, onCancel }) {
 }
 
 function PrizeRow({ prize, onEdit, onDelete }) {
+  let timeSlots = []
+  try {
+    timeSlots = prize.timeSlots ? JSON.parse(prize.timeSlots) : []
+  } catch (e) {}
+
   return (
     <div className="flex items-center gap-3 bg-slate-700 rounded-lg px-3 py-2">
       <div className="w-4 h-4 rounded-full shrink-0" style={{ background: prize.color }} />
@@ -124,9 +226,9 @@ function PrizeRow({ prize, onEdit, onDelete }) {
               {prize.triggerAtCount}人目
             </span>
           )}
-          {prize.unlockTime && (
+          {timeSlots.length > 0 && (
             <span className="text-xs bg-blue-500/20 text-blue-300 px-1.5 rounded">
-              {prize.unlockTime}{prize.untilTime ? `〜${prize.untilTime}` : '〜'}
+              {timeSlots.map(s => `${s.unlockTime}${s.untilTime ? `〜${s.untilTime}` : ''}`).join(', ')}
             </span>
           )}
         </div>
