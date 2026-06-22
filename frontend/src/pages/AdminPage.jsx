@@ -435,10 +435,16 @@ export default function AdminPage() {
               <label className="block">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-gray-400">🔊 ドラムロール音</span>
-                  <button type="button" onClick={() => startDrumroll(soundForm.drainrollSound)}
-                    className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded">
-                    ▶ 再生
-                  </button>
+                  <div className="flex gap-1">
+                    <button type="button" onClick={() => startDrumroll(soundForm.drainrollSound)}
+                      className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded">
+                      ▶ 再生
+                    </button>
+                    <button type="button" onClick={() => stopDrumroll()}
+                      className="text-xs px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded">
+                      ⏹ 停止
+                    </button>
+                  </div>
                 </div>
                 <select value={soundForm.drainrollSound} onChange={e => setSoundForm({ ...soundForm, drainrollSound: e.target.value })}
                   className="inp">
