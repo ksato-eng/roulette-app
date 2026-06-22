@@ -19,32 +19,40 @@ export function useSound() {
 
   // ────────── ドラムロール音（複数パターン） ──────────
 
-  // デフォルト：ホワイトノイズ＋フィルター
+  // デフォルト：スネアドラムロール（クレッシェンド付き）
   const playDrumrollDefault = useCallback(() => {
     const ctx = getCtx()
+    const startTime = ctx.currentTime
+    const duration = 4  // 4秒のロール
+
+    // ホワイトノイズバッファ（スネアドラムの基となる）
     const bufferSize = ctx.sampleRate * 2
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
     const data = buffer.getChannelData(0)
     for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * 0.15
+      data[i] = (Math.random() * 2 - 1) * 0.2
     }
 
     const source = ctx.createBufferSource()
     source.buffer = buffer
     source.loop = true
 
+    // スネアドラム：高周波数帯域を強調
     const filter = ctx.createBiquadFilter()
     filter.type = 'bandpass'
-    filter.frequency.value = 180
-    filter.Q.value = 0.5
+    filter.frequency.value = 400  // より高い周波数（スネアドラムっぽく）
+    filter.Q.value = 1.2  // より狭いバンド幅
 
+    // メインゲイン（クレッシェンド）
     const gainNode = ctx.createGain()
-    gainNode.gain.value = 0.6
+    gainNode.gain.setValueAtTime(0.1, startTime)
+    gainNode.gain.linearRampToValueAtTime(0.7, startTime + duration)
 
+    // パルス感を出すためのLFO（ロール感）
     const lfo = ctx.createOscillator()
-    lfo.frequency.value = 30
+    lfo.frequency.value = 60  // より速い（より密なロール感）
     const lfoGain = ctx.createGain()
-    lfoGain.gain.value = 0.4
+    lfoGain.gain.value = 0.5
     lfo.connect(lfoGain)
     lfoGain.connect(gainNode.gain)
     lfo.start()
@@ -54,50 +62,70 @@ export function useSound() {
     gainNode.connect(ctx.destination)
     source.start()
 
+    // duration後に自動停止
+    source.stop(startTime + duration)
+    lfo.stop(startTime + duration)
+
     drumrollNodeRef.current = { source, gainNode, lfo, filter }
   }, [])
 
-  // 電子音：ビープ音パターン
+  // 電子音：ビープ音パターン（クレッシェンド付き）
   const playDrumrollElectronic = useCallback(() => {
     const ctx = getCtx()
+    const startTime = ctx.currentTime
     const beepFreq = 1200
-    let time = ctx.currentTime
+    const duration = 4
+    const beatCount = Math.floor(duration * 20)  // 秒間20ビート
 
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < beatCount; i++) {
+      const beatTime = startTime + (i / 20)  // 秒単位の時間
+      const progress = i / beatCount
+      // クレッシェンド：だんだん音量が上がる
+      const volume = 0.15 + progress * 0.55
+
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
       osc.type = 'square'
       osc.frequency.value = beepFreq
-      gain.gain.setValueAtTime(0.2, time + i * 0.08)
-      gain.gain.setTargetAtTime(0, time + i * 0.08 + 0.02, 0.02)
+
+      gain.gain.setValueAtTime(volume, beatTime)
+      gain.gain.exponentialRampToValueAtTime(0.01, beatTime + 0.04)
+
       osc.connect(gain)
       gain.connect(ctx.destination)
-      osc.start(time + i * 0.08)
-      osc.stop(time + i * 0.08 + 0.05)
+      osc.start(beatTime)
+      osc.stop(beatTime + 0.05)
     }
   }, [])
 
-  // シンセ：スイープ音
+  // シンセ：パルスロール（ピッチ上昇＋クレッシェンド）
   const playDrumrollSynth = useCallback(() => {
     const ctx = getCtx()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
     const startTime = ctx.currentTime
+    const duration = 4
+    const pulseCount = Math.floor(duration * 16)  // 秒間16パルス
 
-    osc.type = 'triangle'
-    osc.frequency.setValueAtTime(500, startTime)
-    osc.frequency.linearRampToValueAtTime(800, startTime + 0.5)
-    osc.frequency.linearRampToValueAtTime(500, startTime + 1)
+    for (let i = 0; i < pulseCount; i++) {
+      const pulseTime = startTime + (i / 16)
+      const progress = i / pulseCount
 
-    gain.gain.setValueAtTime(0.3, startTime)
-    gain.gain.setTargetAtTime(0, startTime + 0.8, 0.1)
+      // クレッシェンド＋ピッチシフト
+      const baseFreq = 300 + progress * 400  // 300Hz → 700Hzに上昇
+      const volume = 0.2 + progress * 0.5
 
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.start(startTime)
-    osc.stop(startTime + 1.2)
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.value = baseFreq
 
-    drumrollNodeRef.current = { source: osc, gainNode: gain, lfo: null, filter: null }
+      gain.gain.setValueAtTime(volume, pulseTime)
+      gain.gain.exponentialRampToValueAtTime(0.01, pulseTime + 0.08)
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start(pulseTime)
+      osc.stop(pulseTime + 0.1)
+    }
   }, [])
 
   const startDrumroll = useCallback((soundType = 'default') => {
