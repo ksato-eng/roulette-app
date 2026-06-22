@@ -8,11 +8,24 @@ function isTopPrize(prize, prizes) {
   return rank < 2  // 上位2種類を「上位賞」とみなす
 }
 
+// 色が明るいかどうかを判定
+function isLightColor(hex) {
+  const c = hex.replace('#', '')
+  const rgb = parseInt(c, 16)
+  const r = (rgb >> 16) & 0xff
+  const g = (rgb >> 8) & 0xff
+  const b = (rgb >> 0) & 0xff
+  // 相対輝度を計算
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance > 0.5
+}
+
 export default function ResultModal({ prize, prizes, totalCount, onClose }) {
   if (!prize) return null
 
   const isTop = isTopPrize(prize, prizes)
   const isLose = prize.weight === Math.max(...prizes.map(p => p.weight))
+  const buttonTextColor = isLightColor(prize.color) ? '#1a202c' : '#ffffff'
 
   return (
     <div
@@ -43,7 +56,7 @@ export default function ResultModal({ prize, prizes, totalCount, onClose }) {
           {isLose ? '😅' : isTop ? '🎉' : '🎊'}
         </div>
 
-        <p className="text-gray-400 text-sm mb-2">第 {totalCount} 回目の抽選</p>
+        <p className="text-gray-300 text-sm mb-2">第 {totalCount} 回目の抽選</p>
 
         <h2 className="text-2xl font-black text-white mb-1">
           {isLose ? 'またの機会に！' : '当選おめでとう！'}
@@ -64,13 +77,13 @@ export default function ResultModal({ prize, prizes, totalCount, onClose }) {
 
         <button
           onClick={onClose}
-          className="w-full py-4 rounded-xl font-black text-lg text-white transition-transform active:scale-95"
-          style={{ background: prize.color }}
+          className="w-full py-4 rounded-xl font-black text-lg transition-transform active:scale-95"
+          style={{ background: prize.color, color: buttonTextColor }}
         >
           次の抽選へ
         </button>
 
-        <p className="text-gray-500 text-xs mt-3">画面をタップしても閉じます</p>
+        <p className="text-gray-300 text-xs mt-3">画面をタップしても閉じます</p>
       </div>
     </div>
   )

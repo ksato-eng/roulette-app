@@ -11,11 +11,11 @@ export default function PrizeLegend({ prizes }) {
           <div
             key={p.id}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold"
-            style={{ background: `${p.color}28`, border: `2px solid ${p.color}` }}
+            style={{ background: `${p.color}20`, border: `2px solid ${p.color}` }}
           >
             <span className="w-3 h-3 rounded-full shrink-0" style={{ background: p.color }} />
             <span style={{ color: p.color }}>{p.name}</span>
-            <span className="text-white/70 font-normal text-xs">残{p.remaining}</span>
+            <span style={{ color: '#1a202c' }} className="font-normal text-xs">残{p.remaining}</span>
           </div>
         ))}
       </div>
@@ -26,10 +26,10 @@ export default function PrizeLegend({ prizes }) {
           {exhausted.map(p => (
             <div
               key={p.id}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs opacity-35"
-              style={{ border: '1px solid #475569', color: '#94a3b8' }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs opacity-60"
+              style={{ border: '1px solid #cbd5e1', color: '#64748b' }}
             >
-              <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-slate-500" />
+              <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-slate-400" />
               <span>{p.name}</span>
               <span>在庫切れ</span>
             </div>

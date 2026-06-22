@@ -117,11 +117,11 @@ export default function DrawPage() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#ffffff' }}>
       {/* ヘッダー */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-        <h1 className="text-xl font-black text-white tracking-wider">🎰 ルーレット抽選</h1>
+      <header className="flex items-center justify-between px-4 py-3 border-b border-gray-300 bg-gray-50">
+        <h1 className="text-xl font-black text-gray-900 tracking-wider">🎰 ルーレット抽選</h1>
         <div className="text-right">
-          <p className="text-xs text-gray-400">累計抽選数</p>
-          <p className="text-2xl font-black text-yellow-400">{totalDrawCount}<span className="text-sm text-gray-400 ml-1">回</span></p>
+          <p className="text-xs text-gray-600">累計抽選数</p>
+          <p className="text-2xl font-black text-blue-600">{totalDrawCount}<span className="text-sm text-gray-600 ml-1">回</span></p>
         </div>
       </header>
 

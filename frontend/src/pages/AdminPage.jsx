@@ -207,21 +207,21 @@ export default function AdminPage() {
     <div className="min-h-screen bg-white text-gray-900">
       {/* ヘッダー */}
       <header className="sticky top-0 z-10 bg-gray-100 border-b border-gray-300 px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-black">⚙️ 管理画面</h1>
+        <h1 className="text-lg font-black text-gray-900">⚙️ 管理画面</h1>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-400">累計 <strong className="text-yellow-400">{totalDrawCount}</strong> 回</span>
-          <a href="/" className="text-xs text-gray-400 hover:text-white border border-slate-600 px-2 py-1 rounded">
+          <span className="text-sm text-gray-700">累計 <strong className="text-blue-600">{totalDrawCount}</strong> 回</span>
+          <a href="/" className="text-xs text-gray-700 hover:text-blue-600 border border-gray-400 hover:border-blue-500 px-2 py-1 rounded transition-colors">
             ← 抽選へ
           </a>
         </div>
       </header>
 
       {/* タブ */}
-      <div className="flex border-b border-slate-700">
+      <div className="flex border-b border-gray-300 bg-gray-50">
         {[['prizes', '景品管理'], ['history', '抽選履歴'], ['danger', 'リセット']].map(([id, label]) => (
           <button key={id} onClick={() => setActiveTab(id)}
             className={`flex-1 py-3 text-sm font-bold transition-colors ${
-              activeTab === id ? 'text-white border-b-2 border-blue-500' : 'text-gray-400 hover:text-white'
+              activeTab === id ? 'text-blue-600 border-b-2 border-blue-500' : 'text-gray-600 hover:text-gray-900'
             }`}>
             {label}
           </button>
@@ -257,7 +257,7 @@ export default function AdminPage() {
               />
             )}
 
-            {loading && <p className="text-center text-gray-400 py-4">読み込み中...</p>}
+            {loading && <p className="text-center text-gray-600 py-4">読み込み中...</p>}
 
             {prizes.map(p => (
               <div key={p.id}>
@@ -295,21 +295,21 @@ export default function AdminPage() {
             </div>
 
             <div className="flex justify-between items-center">
-              <p className="text-sm text-gray-400">全{history.length}件</p>
+              <p className="text-sm text-gray-700">全{history.length}件</p>
               <button onClick={() => exportCSV(history)}
-                className="text-sm px-3 py-1.5 bg-blue-700 hover:bg-blue-600 rounded-lg font-bold">
+                className="text-sm px-3 py-1.5 bg-blue-700 hover:bg-blue-600 rounded-lg font-bold text-white">
                 CSVエクスポート
               </button>
             </div>
 
             <div className="space-y-1 max-h-[60vh] overflow-y-auto">
               {history.length === 0 && (
-                <p className="text-center text-gray-500 py-8">履歴がありません</p>
+                <p className="text-center text-gray-600 py-8">履歴がありません</p>
               )}
               {history.map(h => (
                 <div key={h.id} className="flex items-center gap-3 bg-slate-700 rounded-lg px-3 py-2">
                   <span className="text-gray-400 text-sm w-12 text-right shrink-0">#{h.count}</span>
-                  <span className="font-bold flex-1">{h.prizeName}</span>
+                  <span className="font-bold flex-1 text-white">{h.prizeName}</span>
                   <span className="text-xs text-gray-400">
                     {new Date(h.drawnAt).toLocaleString('ja-JP', {
                       month: '2-digit', day: '2-digit',
