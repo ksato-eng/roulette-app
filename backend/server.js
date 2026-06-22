@@ -2,12 +2,19 @@ import express from 'express'
 import cors from 'cors'
 import { DatabaseSync } from 'node:sqlite'
 import { v4 as uuidv4 } from 'uuid'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 
 const app = express()
-const PORT = 3001
+const PORT = process.env.PORT || 3001
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 app.use(cors())
 app.use(express.json())
+
+// フロントエンドのビルド済みファイルを静的ファイルとして提供
+const distPath = join(__dirname, '../frontend/dist')
+app.use(express.static(distPath))
 
 // node:sqlite（Node 22.5+ 組み込み、Node 24 で安定）
 const db = new DatabaseSync('roulette.db')
@@ -188,6 +195,12 @@ app.post('/api/reset', (req, res) => {
   res.json({ success: true })
 })
 
+// SPA のフォールバック：API 以外のパスは index.html を返す
+app.get('*', (req, res) => {
+  const indexPath = join(distPath, 'index.html')
+  res.sendFile(indexPath)
+})
+
 app.listen(PORT, () => {
-  console.log(`バックエンドサーバー起動中: http://localhost:${PORT}`)
+  console.log(`サーバー起動: http://localhost:${PORT}`)
 })
