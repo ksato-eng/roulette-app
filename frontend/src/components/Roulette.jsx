@@ -168,8 +168,8 @@ export default function Roulette({ prizes, pendingPrize, onAnimationComplete, ca
     ctx.rotate(rotation)
 
     // 外縁の影
-    ctx.shadowColor = 'rgba(0,0,0,0.5)'
-    ctx.shadowBlur = 20
+    ctx.shadowColor = 'rgba(0,0,0,0.3)'
+    ctx.shadowBlur = 16
 
     segments.forEach(seg => {
       const { startAngle: sa, sweepAngle: sw, prize: p } = seg
@@ -181,8 +181,9 @@ export default function Roulette({ prizes, pendingPrize, onAnimationComplete, ca
       ctx.closePath()
       ctx.fillStyle = p.color
       ctx.fill()
-      ctx.strokeStyle = 'rgba(0,0,0,0.3)'
-      ctx.lineWidth = 1.5
+      // セグメント間の枠線を白くして目立つように
+      ctx.strokeStyle = '#ffffff'
+      ctx.lineWidth = 2.5
       ctx.stroke()
       ctx.shadowBlur = 0
 
@@ -200,44 +201,47 @@ export default function Roulette({ prizes, pendingPrize, onAnimationComplete, ca
 
         if (arcLen >= 48) {
           // 広いセグメント：賞名 + 残数を2行表示
-          const fontSize = Math.min(15, arcLen / 5)
-          ctx.translate(r * 0.65, 0)
+          const fontSize = Math.min(18, arcLen / 4.5)
+          ctx.translate(r * 0.63, 0)
           ctx.rotate(Math.PI / 2)
-          ctx.font = `bold ${fontSize}px sans-serif`
-          ctx.fillText(p.name, 0, -fontSize * 0.65)
-          ctx.font = `${fontSize * 0.78}px sans-serif`
-          ctx.fillText(`残${p.remaining}`, 0, fontSize * 0.72)
+          ctx.font = `bold ${fontSize}px 'Noto Sans JP', sans-serif`
+          ctx.fillText(p.name, 0, -fontSize * 0.7)
+          ctx.font = `${fontSize * 0.72}px 'Noto Sans JP', sans-serif`
+          ctx.fillText(`残${p.remaining}`, 0, fontSize * 0.68)
         } else {
           // 狭いセグメント：賞名のみ、外縁寄りに配置
-          const fontSize = Math.min(12, arcLen / 3.5)
-          ctx.translate(r * 0.72, 0)
+          const fontSize = Math.min(14, arcLen / 3.2)
+          ctx.translate(r * 0.7, 0)
           ctx.rotate(Math.PI / 2)
-          ctx.font = `bold ${fontSize}px sans-serif`
+          ctx.font = `bold ${fontSize}px 'Noto Sans JP', sans-serif`
           ctx.fillText(p.name, 0, 0)
         }
         ctx.restore()
       }
     })
 
-    // 中央の丸
-    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 0.14)
-    grad.addColorStop(0, '#f1f5f9')
-    grad.addColorStop(1, '#94a3b8')
+    // 中央の丸（白でシンプルに）
     ctx.beginPath()
-    ctx.arc(0, 0, r * 0.14, 0, Math.PI * 2)
-    ctx.fillStyle = grad
+    ctx.arc(0, 0, r * 0.15, 0, Math.PI * 2)
+    ctx.fillStyle = '#ffffff'
     ctx.fill()
-    ctx.strokeStyle = '#475569'
-    ctx.lineWidth = 2
+    ctx.strokeStyle = '#e2e8f0'
+    ctx.lineWidth = 2.5
     ctx.stroke()
 
     ctx.restore()
 
-    // ── 外枠リング ──
+    // ── 外枠リング（白くして目立つように） ──
     ctx.beginPath()
-    ctx.arc(cx, cy, r + 4, 0, Math.PI * 2)
-    ctx.strokeStyle = '#475569'
-    ctx.lineWidth = 4
+    ctx.arc(cx, cy, r + 6, 0, Math.PI * 2)
+    ctx.strokeStyle = '#ffffff'
+    ctx.lineWidth = 6
+    ctx.stroke()
+    // 外側に薄い影をつける
+    ctx.beginPath()
+    ctx.arc(cx, cy, r + 6, 0, Math.PI * 2)
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+    ctx.lineWidth = 2
     ctx.stroke()
 
     // ── ポインター（上に固定三角） ──
@@ -246,22 +250,23 @@ export default function Roulette({ prizes, pendingPrize, onAnimationComplete, ca
 
   function drawPointer(ctx, cx, cy, r) {
     const px = cx
-    const py = cy - r - 2
-    const pw = 18
-    const ph = 30
+    const py = cy - r - 4
+    const pw = 22
+    const ph = 32
 
     ctx.save()
     ctx.beginPath()
     ctx.moveTo(px, py + ph)
-    ctx.lineTo(px - pw / 2, py + ph + 8)
-    ctx.lineTo(px + pw / 2, py + ph + 8)
+    ctx.lineTo(px - pw / 2, py + ph + 10)
+    ctx.lineTo(px + pw / 2, py + ph + 10)
     ctx.closePath()
     ctx.fillStyle = '#ef4444'
-    ctx.shadowColor = 'rgba(239,68,68,0.8)'
-    ctx.shadowBlur = 12
+    ctx.shadowColor = 'rgba(239,68,68,0.9)'
+    ctx.shadowBlur = 16
+    ctx.shadowOffsetY = 2
     ctx.fill()
     ctx.strokeStyle = '#ffffff'
-    ctx.lineWidth = 2
+    ctx.lineWidth = 2.5
     ctx.stroke()
     ctx.restore()
   }

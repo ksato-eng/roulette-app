@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '../store/appStore'
+import { useSound } from '../hooks/useSound'
 
 const ADMIN_PASSWORD = 'admin1234'
 
@@ -238,6 +239,7 @@ export default function AdminPage() {
   const [pwInput, setPwInput] = useState('')
   const [pwError, setPwError] = useState(false)
   const { prizes, history, totalDrawCount, soundConfig, loading, fetchState, createPrize, updatePrize, deletePrize, clearHistory, resetAll, updateSoundConfig } = useAppStore()
+  const { startDrumroll, stopDrumroll, playWin, playLose } = useSound()
   const [editingPrize, setEditingPrize] = useState(null)  // null | prize | 'new'
   const [activeTab, setActiveTab] = useState('prizes')
   const [soundForm, setSoundForm] = useState({
@@ -431,7 +433,13 @@ export default function AdminPage() {
 
             <div className="bg-slate-700 rounded-xl p-4 space-y-4">
               <label className="block">
-                <span className="text-xs text-gray-400 block mb-2">🔊 ドラムロール音</span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-400">🔊 ドラムロール音</span>
+                  <button type="button" onClick={() => startDrumroll(soundForm.drainrollSound)}
+                    className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded">
+                    ▶ 再生
+                  </button>
+                </div>
                 <select value={soundForm.drainrollSound} onChange={e => setSoundForm({ ...soundForm, drainrollSound: e.target.value })}
                   className="inp">
                   {SOUND_OPTIONS.drainrollSound.map(opt => (
@@ -440,7 +448,13 @@ export default function AdminPage() {
                 </select>
               </label>
               <label className="block">
-                <span className="text-xs text-gray-400 block mb-2">🎉 当選音</span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-400">🎉 当選音</span>
+                  <button type="button" onClick={() => playWin(soundForm.winSound)}
+                    className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded">
+                    ▶ 再生
+                  </button>
+                </div>
                 <select value={soundForm.winSound} onChange={e => setSoundForm({ ...soundForm, winSound: e.target.value })}
                   className="inp">
                   {SOUND_OPTIONS.winSound.map(opt => (
@@ -449,7 +463,13 @@ export default function AdminPage() {
                 </select>
               </label>
               <label className="block">
-                <span className="text-xs text-gray-400 block mb-2">😅 ハズレ音</span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-400">😅 ハズレ音</span>
+                  <button type="button" onClick={() => playLose(soundForm.loseSound)}
+                    className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded">
+                    ▶ 再生
+                  </button>
+                </div>
                 <select value={soundForm.loseSound} onChange={e => setSoundForm({ ...soundForm, loseSound: e.target.value })}
                   className="inp">
                   {SOUND_OPTIONS.loseSound.map(opt => (
