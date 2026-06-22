@@ -14,6 +14,16 @@ app.use(express.json())
 
 // フロントエンドのビルド済みファイルを静的ファイルとして提供
 const distPath = join(__dirname, '../frontend/dist')
+console.log(`📁 Serving static files from: ${distPath}`)
+
+// ファイルが存在するか確認
+import { existsSync } from 'node:fs'
+if (!existsSync(distPath)) {
+  console.warn(`⚠️  Warning: dist directory not found at ${distPath}`)
+} else {
+  console.log(`✅ dist directory found`)
+}
+
 app.use(express.static(distPath))
 
 // node:sqlite（Node 22.5+ 組み込み、Node 24 で安定）
@@ -198,7 +208,12 @@ app.post('/api/reset', (req, res) => {
 // SPA のフォールバック：API 以外のパスは index.html を返す
 app.get('*', (req, res) => {
   const indexPath = join(distPath, 'index.html')
-  res.sendFile(indexPath)
+  if (existsSync(indexPath)) {
+    res.sendFile(indexPath)
+  } else {
+    console.error(`❌ index.html not found at ${indexPath}`)
+    res.status(404).json({ error: 'Frontend build not found. Please check build process.' })
+  }
 })
 
 app.listen(PORT, () => {
