@@ -239,7 +239,7 @@ export default function AdminPage() {
   const [pwInput, setPwInput] = useState('')
   const [pwError, setPwError] = useState(false)
   const { prizes, history, totalDrawCount, soundConfig, loading, fetchState, createPrize, updatePrize, deletePrize, clearHistory, resetAll, updateSoundConfig } = useAppStore()
-  const { startDrumroll, stopDrumroll, playWin, playLose } = useSound()
+  const { startDrumroll, stopDrumroll, playWin, playLose, stopAllWinSounds, stopAllLoseSounds } = useSound()
   const [editingPrize, setEditingPrize] = useState(null)  // null | prize | 'new'
   const [activeTab, setActiveTab] = useState('prizes')
   const [soundForm, setSoundForm] = useState({
@@ -456,10 +456,16 @@ export default function AdminPage() {
               <label className="block">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-gray-400">🎉 当選音</span>
-                  <button type="button" onClick={() => playWin(soundForm.winSound)}
-                    className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded">
-                    ▶ 再生
-                  </button>
+                  <div className="flex gap-1">
+                    <button type="button" onClick={() => playWin(soundForm.winSound)}
+                      className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded">
+                      ▶ 再生
+                    </button>
+                    <button type="button" onClick={() => stopAllWinSounds()}
+                      className="text-xs px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded">
+                      ⏹ 停止
+                    </button>
+                  </div>
                 </div>
                 <select value={soundForm.winSound} onChange={e => setSoundForm({ ...soundForm, winSound: e.target.value })}
                   className="inp">
@@ -471,10 +477,16 @@ export default function AdminPage() {
               <label className="block">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-gray-400">😅 ハズレ音</span>
-                  <button type="button" onClick={() => playLose(soundForm.loseSound)}
-                    className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded">
-                    ▶ 再生
-                  </button>
+                  <div className="flex gap-1">
+                    <button type="button" onClick={() => playLose(soundForm.loseSound)}
+                      className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded">
+                      ▶ 再生
+                    </button>
+                    <button type="button" onClick={() => stopAllLoseSounds()}
+                      className="text-xs px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded">
+                      ⏹ 停止
+                    </button>
+                  </div>
                 </div>
                 <select value={soundForm.loseSound} onChange={e => setSoundForm({ ...soundForm, loseSound: e.target.value })}
                   className="inp">

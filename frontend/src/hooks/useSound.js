@@ -5,6 +5,7 @@ export function useSound() {
   const audioCtxRef = useRef(null)
   const drumrollNodeRef = useRef(null)
   const drumrollAudioRef = useRef(null)  // 実際のドラムロール音源用
+  const playingOscillatorsRef = useRef([])  // 再生中のOscillator群を管理
 
   // AudioContext は最初のユーザー操作後に作成
   function getCtx() {
@@ -142,6 +143,7 @@ export function useSound() {
 
   // ファンファーレ（1等・2等用）
   const playFanfare = useCallback(() => {
+    stopAllWinSounds()  // 前回の音を停止
     const ctx = getCtx()
     const notes = [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5]
     const durations = [0.12, 0.12, 0.12, 0.4, 0.1, 0.5]
@@ -172,12 +174,16 @@ export function useSound() {
       osc.start(time)
       osc.stop(time + durations[i])
 
+      // Oscillatorを管理リストに追加
+      playingOscillatorsRef.current.push({ osc, osc2, gain, gain2 })
+
       time += durations[i]
     })
   }, [])
 
   // ベル音
   const playBell = useCallback(() => {
+    stopAllWinSounds()  // 前回の音を停止
     const ctx = getCtx()
     const frequencies = [659.25, 783.99, 987.77]
     const startTime = ctx.currentTime + 0.05
@@ -195,11 +201,14 @@ export function useSound() {
       gain.connect(ctx.destination)
       osc.start(startTime + i * 0.1)
       osc.stop(startTime + i * 0.1 + 1.8)
+
+      playingOscillatorsRef.current.push({ osc, gain })
     })
   }, [])
 
   // チャイム音
   const playChime = useCallback(() => {
+    stopAllWinSounds()  // 前回の音を停止
     const ctx = getCtx()
     const chords = [523.25, 659.25, 783.99]
     const startTime = ctx.currentTime + 0.05
@@ -218,11 +227,14 @@ export function useSound() {
       gain.connect(ctx.destination)
       osc.start(startTime + i * 0.08)
       osc.stop(startTime + i * 0.08 + 1.3)
+
+      playingOscillatorsRef.current.push({ osc, gain })
     })
   }, [])
 
   // キラキラ音
   const playSparkle = useCallback(() => {
+    stopAllWinSounds()  // 前回の音を停止
     const ctx = getCtx()
     const baseTime = ctx.currentTime + 0.05
     const frequencies = [1046.5, 1318.51, 1567.98, 1046.5]
@@ -240,24 +252,15 @@ export function useSound() {
       gain.connect(ctx.destination)
       osc.start(baseTime + i * 0.05)
       osc.stop(baseTime + i * 0.05 + 0.5)
+
+      playingOscillatorsRef.current.push({ osc, gain })
     })
   }, [])
-
-  const playWin = useCallback((soundType = 'fanfare') => {
-    if (soundType === 'bell') {
-      playBell()
-    } else if (soundType === 'chime') {
-      playChime()
-    } else if (soundType === 'sparkle') {
-      playSparkle()
-    } else {
-      playFanfare()
-    }
-  }, [playFanfare, playBell, playChime, playSparkle])
 
   // ────────── ハズレ音（複数パターン） ──────────
 
   const playBuzz = useCallback(() => {
+    stopAllLoseSounds()  // 前回の音を停止
     const ctx = getCtx()
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
@@ -272,9 +275,12 @@ export function useSound() {
     gain.connect(ctx.destination)
     osc.start(ctx.currentTime)
     osc.stop(ctx.currentTime + 0.4)
+
+    playingOscillatorsRef.current.push({ osc, gain })
   }, [])
 
   const playSad = useCallback(() => {
+    stopAllLoseSounds()  // 前回の音を停止
     const ctx = getCtx()
     const startTime = ctx.currentTime + 0.05
     const frequencies = [392, 349.23]
@@ -292,10 +298,13 @@ export function useSound() {
       gain.connect(ctx.destination)
       osc.start(startTime + i * 0.15)
       osc.stop(startTime + i * 0.15 + 0.7)
+
+      playingOscillatorsRef.current.push({ osc, gain })
     })
   }, [])
 
   const playFail = useCallback(() => {
+    stopAllLoseSounds()  // 前回の音を停止
     const ctx = getCtx()
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
@@ -310,7 +319,50 @@ export function useSound() {
     gain.connect(ctx.destination)
     osc.start(ctx.currentTime)
     osc.stop(ctx.currentTime + 0.35)
+
+    playingOscillatorsRef.current.push({ osc, gain })
   }, [])
+
+  // 全ての当選音を停止
+  const stopAllWinSounds = useCallback(() => {
+    playingOscillatorsRef.current.forEach(({ osc, osc2, gain, gain2 }) => {
+      try {
+        const ctx = audioCtxRef.current
+        if (ctx) {
+          if (gain) gain.gain.setTargetAtTime(0, ctx.currentTime, 0.05)
+          if (osc) osc.stop(ctx.currentTime + 0.1)
+          if (osc2) osc2.stop(ctx.currentTime + 0.1)
+        }
+      } catch (e) {}
+    })
+    playingOscillatorsRef.current = []
+  }, [])
+
+  // 全てのハズレ音を停止
+  const stopAllLoseSounds = useCallback(() => {
+    playingOscillatorsRef.current.forEach(({ osc, gain }) => {
+      try {
+        const ctx = audioCtxRef.current
+        if (ctx) {
+          if (gain) gain.gain.setTargetAtTime(0, ctx.currentTime, 0.05)
+          if (osc) osc.stop(ctx.currentTime + 0.1)
+        }
+      } catch (e) {}
+    })
+    playingOscillatorsRef.current = []
+  }, [])
+
+  const playWin = useCallback((soundType = 'fanfare') => {
+    if (soundType === 'bell') {
+      playBell()
+    } else if (soundType === 'chime') {
+      playChime()
+    } else if (soundType === 'sparkle') {
+      playSparkle()
+    } else {
+      playFanfare()
+    }
+  }, [playFanfare, playBell, playChime, playSparkle])
 
   const playLose = useCallback((soundType = 'buzz') => {
     if (soundType === 'sad') {
@@ -325,8 +377,10 @@ export function useSound() {
   return {
     startDrumroll,
     stopDrumroll,
-    playWin,     // playWin（soundType パラメータ対応）
-    playLose,    // playLose（soundType パラメータ対応）
+    playWin,
+    playLose,
+    stopAllWinSounds,
+    stopAllLoseSounds,
     // 後方互換性のため
     playFanfare,
     playChime,
