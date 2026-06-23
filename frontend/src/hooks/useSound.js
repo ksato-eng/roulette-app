@@ -4,7 +4,6 @@ import { useRef, useCallback } from 'react'
 export function useSound() {
   const audioCtxRef = useRef(null)
   const drumrollNodeRef = useRef(null)
-  const drumrollAudioRef = useRef(null)  // 実際のドラムロール音源用
   const playingOscillatorsRef = useRef([])  // 再生中のOscillator群を管理
 
   // AudioContext は最初のユーザー操作後に作成
@@ -21,19 +20,54 @@ export function useSound() {
 
   // ────────── ドラムロール音（複数パターン） ──────────
 
-  // デフォルト：実際のドラムロール音源MP3をループ再生
+  // デフォルト：スネアドラムロール（クレッシェンド付き）
   const playDrumrollDefault = useCallback(() => {
-    stopDrumroll()  // 前回の再生を停止
+    const ctx = getCtx()
+    const startTime = ctx.currentTime
+    const duration = 4  // 4秒のロール
 
-    // Audio要素を作成
-    const audio = new Audio('/sounds/drumroll-default.mp3')
-    audio.loop = true
-    audio.volume = 0.7
-    audio.play().catch(err => {
-      console.warn('Audio playback failed:', err)
-    })
+    // ホワイトノイズバッファ（スネアドラムの基となる）
+    const bufferSize = ctx.sampleRate * 2
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+    const data = buffer.getChannelData(0)
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * 0.2
+    }
 
-    drumrollAudioRef.current = audio
+    const source = ctx.createBufferSource()
+    source.buffer = buffer
+    source.loop = true
+
+    // スネアドラム：高周波数帯域を強調
+    const filter = ctx.createBiquadFilter()
+    filter.type = 'bandpass'
+    filter.frequency.value = 400  // より高い周波数（スネアドラムっぽく）
+    filter.Q.value = 1.2  // より狭いバンド幅
+
+    // メインゲイン（クレッシェンド）
+    const gainNode = ctx.createGain()
+    gainNode.gain.setValueAtTime(0.1, startTime)
+    gainNode.gain.linearRampToValueAtTime(0.7, startTime + duration)
+
+    // パルス感を出すためのLFO（ロール感）
+    const lfo = ctx.createOscillator()
+    lfo.frequency.value = 60  // より速い（より密なロール感）
+    const lfoGain = ctx.createGain()
+    lfoGain.gain.value = 0.5
+    lfo.connect(lfoGain)
+    lfoGain.connect(gainNode.gain)
+    lfo.start()
+
+    source.connect(filter)
+    filter.connect(gainNode)
+    gainNode.connect(ctx.destination)
+    source.start()
+
+    // duration後に自動停止
+    source.stop(startTime + duration)
+    lfo.stop(startTime + duration)
+
+    drumrollNodeRef.current = { source, gainNode, lfo, filter }
   }, [])
 
   // 電子音：ビープ音パターン（クレッシェンド付き）
@@ -107,18 +141,6 @@ export function useSound() {
   }, [playDrumrollDefault, playDrumrollElectronic, playDrumrollSynth])
 
   const stopDrumroll = useCallback(() => {
-    // MP3ファイルを再生中の場合
-    if (drumrollAudioRef.current) {
-      try {
-        drumrollAudioRef.current.pause()
-        drumrollAudioRef.current.currentTime = 0
-      } catch (e) {
-        // already stopped
-      }
-      drumrollAudioRef.current = null
-    }
-
-    // Web Audio APIで生成した音の場合
     if (drumrollNodeRef.current) {
       const { source, gainNode, lfo } = drumrollNodeRef.current
       try {

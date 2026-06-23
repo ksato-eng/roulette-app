@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useAppStore } from '../store/appStore'
-import { useSound } from '../hooks/useSound'
 
 const ADMIN_PASSWORD = 'admin1234'
 
@@ -238,30 +237,13 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [pwInput, setPwInput] = useState('')
   const [pwError, setPwError] = useState(false)
-  const { prizes, history, totalDrawCount, soundConfig, loading, fetchState, createPrize, updatePrize, deletePrize, clearHistory, resetAll, updateSoundConfig } = useAppStore()
-  const { startDrumroll, stopDrumroll, playWin, playLose, stopAllWinSounds, stopAllLoseSounds } = useSound()
+  const { prizes, history, totalDrawCount, loading, fetchState, createPrize, updatePrize, deletePrize, clearHistory, resetAll } = useAppStore()
   const [editingPrize, setEditingPrize] = useState(null)  // null | prize | 'new'
   const [activeTab, setActiveTab] = useState('prizes')
-  const [soundForm, setSoundForm] = useState({
-    drainrollSound: 'default',
-    winSound: 'fanfare',
-    loseSound: 'buzz'
-  })
 
   useEffect(() => {
     if (authed) fetchState()
   }, [authed])
-
-  // soundConfig が更新されたら soundForm を更新
-  useEffect(() => {
-    if (soundConfig) {
-      setSoundForm({
-        drainrollSound: soundConfig.drainrollSound || 'default',
-        winSound: soundConfig.winSound || 'fanfare',
-        loseSound: soundConfig.loseSound || 'buzz'
-      })
-    }
-  }, [soundConfig])
 
   const handleLogin = (e) => {
     e.preventDefault()
@@ -313,7 +295,7 @@ export default function AdminPage() {
 
       {/* タブ */}
       <div className="flex border-b border-gray-300 bg-gray-50 overflow-x-auto">
-        {[['prizes', '景品管理'], ['history', '抽選履歴'], ['settings', '共通設定'], ['danger', 'リセット']].map(([id, label]) => (
+        {[['prizes', '景品管理'], ['history', '抽選履歴'], ['danger', 'リセット']].map(([id, label]) => (
           <button key={id} onClick={() => setActiveTab(id)}
             className={`py-3 px-4 text-sm font-bold transition-colors whitespace-nowrap ${
               activeTab === id ? 'text-blue-600 border-b-2 border-blue-500' : 'text-gray-600 hover:text-gray-900'
@@ -413,94 +395,6 @@ export default function AdminPage() {
                   </span>
                 </div>
               ))}
-            </div>
-          </div>
-        )}
-
-        {/* 共通設定タブ */}
-        {activeTab === 'settings' && (
-          <div className="space-y-4 py-4">
-            {/* 説明 */}
-            <div className="bg-blue-50 border border-blue-300 rounded-lg p-3 mb-4">
-              <h3 className="font-bold text-blue-900 text-sm mb-2">🔊 音声設定について</h3>
-              <ul className="text-xs text-gray-800 space-y-1">
-                <li>✓ 全景品で共通の音声設定です</li>
-                <li>✓ ドラムロール音：抽選中に鳴ります</li>
-                <li>✓ 当選音：景品が当選したときに鳴ります</li>
-                <li>✓ ハズレ音：ハズレが出たときに鳴ります</li>
-              </ul>
-            </div>
-
-            <div className="bg-slate-700 rounded-xl p-4 space-y-4">
-              <label className="block">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-gray-400">🔊 ドラムロール音</span>
-                  <div className="flex gap-1">
-                    <button type="button" onClick={() => startDrumroll(soundForm.drainrollSound)}
-                      className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded">
-                      ▶ 再生
-                    </button>
-                    <button type="button" onClick={() => stopDrumroll()}
-                      className="text-xs px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded">
-                      ⏹ 停止
-                    </button>
-                  </div>
-                </div>
-                <select value={soundForm.drainrollSound} onChange={e => setSoundForm({ ...soundForm, drainrollSound: e.target.value })}
-                  className="inp">
-                  {SOUND_OPTIONS.drainrollSound.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-gray-400">🎉 当選音</span>
-                  <div className="flex gap-1">
-                    <button type="button" onClick={() => playWin(soundForm.winSound)}
-                      className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded">
-                      ▶ 再生
-                    </button>
-                    <button type="button" onClick={() => stopAllWinSounds()}
-                      className="text-xs px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded">
-                      ⏹ 停止
-                    </button>
-                  </div>
-                </div>
-                <select value={soundForm.winSound} onChange={e => setSoundForm({ ...soundForm, winSound: e.target.value })}
-                  className="inp">
-                  {SOUND_OPTIONS.winSound.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-gray-400">😅 ハズレ音</span>
-                  <div className="flex gap-1">
-                    <button type="button" onClick={() => playLose(soundForm.loseSound)}
-                      className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded">
-                      ▶ 再生
-                    </button>
-                    <button type="button" onClick={() => stopAllLoseSounds()}
-                      className="text-xs px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded">
-                      ⏹ 停止
-                    </button>
-                  </div>
-                </div>
-                <select value={soundForm.loseSound} onChange={e => setSoundForm({ ...soundForm, loseSound: e.target.value })}
-                  className="inp">
-                  {SOUND_OPTIONS.loseSound.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </label>
-
-              <button
-                onClick={() => updateSoundConfig(soundForm)}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl">
-                保存
-              </button>
             </div>
           </div>
         )}
