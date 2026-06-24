@@ -31,4 +31,7 @@ export const api = {
 
   getSoundConfig: () => req('GET', '/sound-config'),
   updateSoundConfig: (data) => req('POST', '/sound-config', data),
+
+  getResultConfig: () => req('GET', '/result-config'),
+  updateResultConfig: (data) => req('POST', '/result-config', data),
 }

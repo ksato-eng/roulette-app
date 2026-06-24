@@ -104,6 +104,18 @@ if (!soundSettings) {
   db.prepare("INSERT INTO settings (key, value) VALUES ('soundConfig', ?)").run(defaultSounds)
 }
 
+const resultSettings = db.prepare("SELECT value FROM settings WHERE key='resultConfig'").get()
+if (!resultSettings) {
+  const defaultResult = JSON.stringify({
+    loseTitle: 'またの機会に！',
+    winTitle: '当選おめでとう！',
+    topPrizeMessage: '✨ おめでとうございます！ ✨',
+    closeButtonText: '次の抽選へ',
+    tapToCloseText: '画面をタップしても閉じます'
+  })
+  db.prepare("INSERT INTO settings (key, value) VALUES ('resultConfig', ?)").run(defaultResult)
+}
+
 // デフォルト景品の追加（テーブルが空の場合）
 const prizeCount = db.prepare("SELECT COUNT(*) as cnt FROM prizes").get()
 if (prizeCount.cnt === 0) {
@@ -205,7 +217,21 @@ app.get('/api/state', (req, res) => {
     } catch (e) {}
   }
 
-  res.json({ prizes, totalDrawCount: parseInt(countRow.value), history, soundConfig })
+  let resultConfig = {
+    loseTitle: 'またの機会に！',
+    winTitle: '当選おめでとう！',
+    topPrizeMessage: '✨ おめでとうございます！ ✨',
+    closeButtonText: '次の抽選へ',
+    tapToCloseText: '画面をタップしても閉じます'
+  }
+  const resultRow = db.prepare("SELECT value FROM settings WHERE key='resultConfig'").get()
+  if (resultRow) {
+    try {
+      resultConfig = JSON.parse(resultRow.value)
+    } catch (e) {}
+  }
+
+  res.json({ prizes, totalDrawCount: parseInt(countRow.value), history, soundConfig, resultConfig })
 })
 
 // 抽選実行（当選者を決定して返す）
@@ -296,6 +322,37 @@ app.post('/api/sound-config', (req, res) => {
     loseSound: loseSound || 'buzz'
   })
   db.prepare("UPDATE settings SET value=? WHERE key='soundConfig'").run(soundConfig)
+  res.json({ success: true })
+})
+
+// 抽選結果テキスト設定
+app.get('/api/result-config', (req, res) => {
+  let resultConfig = {
+    loseTitle: 'またの機会に！',
+    winTitle: '当選おめでとう！',
+    topPrizeMessage: '✨ おめでとうございます！ ✨',
+    closeButtonText: '次の抽選へ',
+    tapToCloseText: '画面をタップしても閉じます'
+  }
+  const resultRow = db.prepare("SELECT value FROM settings WHERE key='resultConfig'").get()
+  if (resultRow) {
+    try {
+      resultConfig = JSON.parse(resultRow.value)
+    } catch (e) {}
+  }
+  res.json(resultConfig)
+})
+
+app.post('/api/result-config', (req, res) => {
+  const { loseTitle, winTitle, topPrizeMessage, closeButtonText, tapToCloseText } = req.body
+  const resultConfig = JSON.stringify({
+    loseTitle: loseTitle || 'またの機会に！',
+    winTitle: winTitle || '当選おめでとう！',
+    topPrizeMessage: topPrizeMessage || '✨ おめでとうございます！ ✨',
+    closeButtonText: closeButtonText || '次の抽選へ',
+    tapToCloseText: tapToCloseText || '画面をタップしても閉じます'
+  })
+  db.prepare("UPDATE settings SET value=? WHERE key='resultConfig'").run(resultConfig)
   res.json({ success: true })
 })
 

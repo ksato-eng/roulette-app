@@ -6,6 +6,13 @@ export const useAppStore = create((set, get) => ({
   totalDrawCount: 0,
   history: [],
   soundConfig: { drainrollSound: 'default', winSound: 'fanfare', loseSound: 'buzz' },
+  resultConfig: {
+    loseTitle: 'またの機会に！',
+    winTitle: '当選おめでとう！',
+    topPrizeMessage: '✨ おめでとうございます！ ✨',
+    closeButtonText: '次の抽選へ',
+    tapToCloseText: '画面をタップしても閉じます'
+  },
   loading: false,
   error: null,
 
@@ -18,6 +25,13 @@ export const useAppStore = create((set, get) => ({
         totalDrawCount: data.totalDrawCount,
         history: data.history,
         soundConfig: data.soundConfig || { drainrollSound: 'default', winSound: 'fanfare', loseSound: 'buzz' },
+        resultConfig: data.resultConfig || {
+          loseTitle: 'またの機会に！',
+          winTitle: '当選おめでとう！',
+          topPrizeMessage: '✨ おめでとうございます！ ✨',
+          closeButtonText: '次の抽選へ',
+          tapToCloseText: '画面をタップしても閉じます'
+        },
         loading: false
       })
     } catch (e) {
@@ -66,5 +80,10 @@ export const useAppStore = create((set, get) => ({
   updateSoundConfig: async (data) => {
     await api.updateSoundConfig(data)
     set({ soundConfig: data })
+  },
+
+  updateResultConfig: async (data) => {
+    await api.updateResultConfig(data)
+    set({ resultConfig: data })
   },
 }))

@@ -237,13 +237,21 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [pwInput, setPwInput] = useState('')
   const [pwError, setPwError] = useState(false)
-  const { prizes, history, totalDrawCount, loading, fetchState, createPrize, updatePrize, deletePrize, clearHistory, resetAll } = useAppStore()
+  const { prizes, history, resultConfig, totalDrawCount, loading, fetchState, createPrize, updatePrize, deletePrize, clearHistory, resetAll, updateResultConfig } = useAppStore()
   const [editingPrize, setEditingPrize] = useState(null)  // null | prize | 'new'
   const [activeTab, setActiveTab] = useState('prizes')
+  const [resultForm, setResultForm] = useState(null)
+  const [resultEditing, setResultEditing] = useState(false)
 
   useEffect(() => {
     if (authed) fetchState()
   }, [authed])
+
+  useEffect(() => {
+    if (resultConfig) {
+      setResultForm({ ...resultConfig })
+    }
+  }, [resultConfig])
 
   const handleLogin = (e) => {
     e.preventDefault()
@@ -295,7 +303,7 @@ export default function AdminPage() {
 
       {/* タブ */}
       <div className="flex border-b border-gray-300 bg-gray-50 overflow-x-auto">
-        {[['prizes', '景品管理'], ['history', '抽選履歴'], ['danger', 'リセット']].map(([id, label]) => (
+        {[['prizes', '景品管理'], ['history', '抽選履歴'], ['result', '結果テキスト'], ['danger', 'リセット']].map(([id, label]) => (
           <button key={id} onClick={() => setActiveTab(id)}
             className={`py-3 px-4 text-sm font-bold transition-colors whitespace-nowrap ${
               activeTab === id ? 'text-blue-600 border-b-2 border-blue-500' : 'text-gray-600 hover:text-gray-900'
@@ -396,6 +404,101 @@ export default function AdminPage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* 結果テキストタブ */}
+        {activeTab === 'result' && (
+          <div className="space-y-3">
+            {/* 説明 */}
+            <div className="bg-blue-50 border border-blue-300 rounded-lg p-3 mb-4">
+              <h3 className="font-bold text-blue-900 text-sm mb-2">📝 抽選結果画面のテキスト</h3>
+              <ul className="text-xs text-gray-800 space-y-1">
+                <li>✓ 抽選結果画面に表示されるテキストを自由に編集できます</li>
+                <li>✓ ハズレ時・当選時の表現や、ボタンテキストをカスタマイズ可能</li>
+              </ul>
+            </div>
+
+            {resultForm && (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  await updateResultConfig(resultForm)
+                  setResultEditing(false)
+                  alert('結果テキストを更新しました')
+                }}
+                className="bg-slate-700 rounded-xl p-4 space-y-4"
+              >
+                <label className="col-span-2 block">
+                  <span className="text-xs text-gray-400">ハズレ時のタイトル</span>
+                  <input
+                    type="text"
+                    className="inp"
+                    value={resultForm.loseTitle || ''}
+                    onChange={e => setResultForm({ ...resultForm, loseTitle: e.target.value })}
+                  />
+                </label>
+
+                <label className="col-span-2 block">
+                  <span className="text-xs text-gray-400">当選時のタイトル</span>
+                  <input
+                    type="text"
+                    className="inp"
+                    value={resultForm.winTitle || ''}
+                    onChange={e => setResultForm({ ...resultForm, winTitle: e.target.value })}
+                  />
+                </label>
+
+                <label className="col-span-2 block">
+                  <span className="text-xs text-gray-400">上位賞のメッセージ</span>
+                  <input
+                    type="text"
+                    className="inp"
+                    value={resultForm.topPrizeMessage || ''}
+                    onChange={e => setResultForm({ ...resultForm, topPrizeMessage: e.target.value })}
+                  />
+                </label>
+
+                <label className="col-span-2 block">
+                  <span className="text-xs text-gray-400">ボタンテキスト</span>
+                  <input
+                    type="text"
+                    className="inp"
+                    value={resultForm.closeButtonText || ''}
+                    onChange={e => setResultForm({ ...resultForm, closeButtonText: e.target.value })}
+                  />
+                </label>
+
+                <label className="col-span-2 block">
+                  <span className="text-xs text-gray-400">タップ説明テキスト</span>
+                  <input
+                    type="text"
+                    className="inp"
+                    value={resultForm.tapToCloseText || ''}
+                    onChange={e => setResultForm({ ...resultForm, tapToCloseText: e.target.value })}
+                  />
+                </label>
+
+                <div className="flex gap-2 pt-4">
+                  <button
+                    type="submit"
+                    className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-sm"
+                  >
+                    保存
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setResultEditing(false)
+                      setResultForm({ ...resultConfig })
+                    }}
+                    className="flex-1 py-2 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-lg text-sm"
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         )}
 

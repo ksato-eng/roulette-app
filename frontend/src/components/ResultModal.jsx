@@ -20,12 +20,21 @@ function isLightColor(hex) {
   return luminance > 0.5
 }
 
-export default function ResultModal({ prize, prizes, totalCount, onClose }) {
+export default function ResultModal({ prize, prizes, totalCount, onClose, resultConfig }) {
   if (!prize) return null
 
   const isTop = isTopPrize(prize, prizes)
   const isLose = prize.weight === Math.max(...prizes.map(p => p.weight))
   const buttonTextColor = isLightColor(prize.color) ? '#1a202c' : '#ffffff'
+
+  // デフォルト値を設定
+  const config = resultConfig || {
+    loseTitle: 'またの機会に！',
+    winTitle: '当選おめでとう！',
+    topPrizeMessage: '✨ おめでとうございます！ ✨',
+    closeButtonText: '次の抽選へ',
+    tapToCloseText: '画面をタップしても閉じます'
+  }
 
   return (
     <div
@@ -59,7 +68,7 @@ export default function ResultModal({ prize, prizes, totalCount, onClose }) {
         <p className="text-gray-300 text-sm mb-2">第 {totalCount} 回目の抽選</p>
 
         <h2 className="text-2xl font-black text-white mb-1">
-          {isLose ? 'またの機会に！' : '当選おめでとう！'}
+          {isLose ? config.loseTitle : config.winTitle}
         </h2>
 
         <div
@@ -71,7 +80,7 @@ export default function ResultModal({ prize, prizes, totalCount, onClose }) {
 
         {isTop && (
           <p className="text-yellow-300 text-sm font-bold mb-4 animate-pulse">
-            ✨ おめでとうございます！ ✨
+            {config.topPrizeMessage}
           </p>
         )}
 
@@ -80,10 +89,10 @@ export default function ResultModal({ prize, prizes, totalCount, onClose }) {
           className="w-full py-4 rounded-xl font-black text-lg transition-transform active:scale-95"
           style={{ background: prize.color, color: buttonTextColor }}
         >
-          次の抽選へ
+          {config.closeButtonText}
         </button>
 
-        <p className="text-gray-300 text-xs mt-3">画面をタップしても閉じます</p>
+        <p className="text-gray-300 text-xs mt-3">{config.tapToCloseText}</p>
       </div>
     </div>
   )

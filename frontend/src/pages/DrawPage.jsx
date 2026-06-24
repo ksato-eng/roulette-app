@@ -10,7 +10,7 @@ import { useSound } from '../hooks/useSound'
 const PHASE = { IDLE: 'idle', SPINNING: 'spinning', STOPPING: 'stopping', RESULT: 'result' }
 
 export default function DrawPage() {
-  const { prizes, soundConfig, totalDrawCount, fetchState, pickWinner, confirmDraw, loading } = useAppStore()
+  const { prizes, soundConfig, resultConfig, totalDrawCount, fetchState, pickWinner, confirmDraw, loading } = useAppStore()
   const [phase, setPhase] = useState(PHASE.IDLE)
   const [pendingPrize, setPendingPrize] = useState(null)   // ルーレットの停止目標
   const pendingPrizeRef = useRef(null)                     // 常に最新値を保持
@@ -152,7 +152,7 @@ export default function DrawPage() {
               disabled={phase === PHASE.STOPPING || availablePrizes.length === 0}
               className={`btn-start pointer-events-auto w-32 h-32 rounded-full font-black text-lg text-white
                 bg-gradient-to-b ${btnColor} shadow-2xl
-                disabled:opacity-50 disabled:cursor-not-allowed
+                disabled:cursor-not-allowed
                 flex items-center justify-center text-center leading-tight`}
             >
               {availablePrizes.length === 0 ? '景品\nなし' : btnLabel}
@@ -182,6 +182,7 @@ export default function DrawPage() {
           prizes={prizes}
           totalCount={resultCount}
           onClose={handleCloseResult}
+          resultConfig={resultConfig}
         />
       )}
     </div>
