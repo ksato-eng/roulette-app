@@ -110,10 +110,10 @@ export default function DrawPage() {
   }[phase]
 
   const btnColor = {
-    [PHASE.IDLE]: 'from-green-500 to-emerald-600 hover:from-green-400 shadow-green-500/50',
-    [PHASE.SPINNING]: 'from-red-500 to-rose-600 hover:from-red-400 shadow-red-500/50',
-    [PHASE.STOPPING]: 'from-gray-500 to-gray-600 cursor-not-allowed shadow-gray-500/30',
-    [PHASE.RESULT]: 'from-blue-500 to-indigo-600 hover:from-blue-400 shadow-blue-500/50',
+    [PHASE.IDLE]: 'from-green-500 to-emerald-600 hover:from-green-400 shadow-green-600',
+    [PHASE.SPINNING]: 'from-red-500 to-rose-600 hover:from-red-400 shadow-red-600',
+    [PHASE.STOPPING]: 'from-gray-500 to-gray-600 cursor-not-allowed shadow-gray-600',
+    [PHASE.RESULT]: 'from-blue-500 to-indigo-600 hover:from-blue-400 shadow-blue-600',
   }[phase]
 
   const handleBtnClick = () => {
