@@ -26,6 +26,10 @@ if (!existsSync(distPath)) {
 
 app.use(express.static(distPath))
 
+// 音声ファイルを public フォルダから提供
+const publicPath = join(__dirname, 'public')
+app.use('/sounds', express.static(join(publicPath, 'sounds')))
+
 // node:sqlite（Node 22.5+ 組み込み、Node 24 で安定）
 const db = new DatabaseSync('roulette.db')
 

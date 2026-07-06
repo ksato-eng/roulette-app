@@ -18,6 +18,7 @@ export default function DrawPage() {
   const [resultCount, setResultCount] = useState(0)
   // Rouletteコンポーネントのcanvas要素を受け取るref
   const canvasRef = useRef(null)
+  const autoStopTimerRef = useRef(null)                    // 3秒自動停止用タイマー
   const { startDrumroll, stopDrumroll, playWin, playLose } = useSound()
 
   useEffect(() => { fetchState() }, [fetchState])
@@ -30,7 +31,7 @@ export default function DrawPage() {
     return () => clearInterval(id)
   }, [phase, fetchState])
 
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback(async () => {
     if (phase !== PHASE.IDLE) return
     const canvas = canvasRef.current
     if (!canvas?._startSpin) return
@@ -38,12 +39,20 @@ export default function DrawPage() {
     setPhase(PHASE.SPINNING)
     canvas._startSpin()
 
-    // 共通設定からドラムロール音を取得
+    // ドラムロール音を再生
     const soundType = soundConfig?.drainrollSound || 'default'
     startDrumroll(soundType)
+
+    // 3秒後に自動停止
+    if (autoStopTimerRef.current) clearTimeout(autoStopTimerRef.current)
+    autoStopTimerRef.current = setTimeout(() => {
+      handleStop()
+    }, 3000)
   }, [phase, startDrumroll, soundConfig])
 
   const handleStop = useCallback(async () => {
+    if (autoStopTimerRef.current) clearTimeout(autoStopTimerRef.current)
+
     if (phase !== PHASE.SPINNING) return
     setPhase(PHASE.STOPPING)
     stopDrumroll()
@@ -99,26 +108,34 @@ export default function DrawPage() {
     fetchState()
   }
 
+  // クリーンアップ：コンポーネントアンマウント時にタイマーをクリア
+  useEffect(() => {
+    return () => {
+      if (autoStopTimerRef.current) {
+        clearTimeout(autoStopTimerRef.current)
+      }
+    }
+  }, [])
+
   const availablePrizes = prizes.filter(p => p.remaining > 0)
 
   // ボタンの表示テキスト
   const btnLabel = {
     [PHASE.IDLE]: 'START',
-    [PHASE.SPINNING]: 'STOP',
+    [PHASE.SPINNING]: '回転中...',
     [PHASE.STOPPING]: '減速中...',
     [PHASE.RESULT]: '次の抽選へ',
   }[phase]
 
   const btnColor = {
     [PHASE.IDLE]: 'from-green-500 to-emerald-600 hover:from-green-400 shadow-green-600',
-    [PHASE.SPINNING]: 'from-red-500 to-rose-600 hover:from-red-400 shadow-red-600',
+    [PHASE.SPINNING]: 'from-gray-500 to-gray-600 cursor-not-allowed shadow-gray-600',
     [PHASE.STOPPING]: 'from-gray-500 to-gray-600 cursor-not-allowed shadow-gray-600',
     [PHASE.RESULT]: 'from-blue-500 to-indigo-600 hover:from-blue-400 shadow-blue-600',
   }[phase]
 
   const handleBtnClick = () => {
     if (phase === PHASE.IDLE) handleStart()
-    else if (phase === PHASE.SPINNING) handleStop()
     else if (phase === PHASE.RESULT) handleCloseResult()
   }
 
@@ -149,7 +166,7 @@ export default function DrawPage() {
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <button
               onClick={handleBtnClick}
-              disabled={phase === PHASE.STOPPING || availablePrizes.length === 0}
+              disabled={phase !== PHASE.IDLE && phase !== PHASE.RESULT || availablePrizes.length === 0}
               className={`btn-start pointer-events-auto w-32 h-32 rounded-full font-black text-lg text-white
                 bg-gradient-to-b ${btnColor} shadow-2xl
                 disabled:cursor-not-allowed
