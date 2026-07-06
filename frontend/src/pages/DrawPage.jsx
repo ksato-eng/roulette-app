@@ -44,14 +44,14 @@ export default function DrawPage() {
     const soundType = soundConfig?.drainrollSound || 'default'
     startDrumroll(soundType)
 
-    // 4秒後に自動停止（4秒回転 + 1秒減速 = 5秒で完全停止）
+    // 2.5秒後に自動停止（2.5秒回転 + 1.5秒減速 = 4秒で完全停止）
     if (autoStopTimerRef.current) clearTimeout(autoStopTimerRef.current)
     autoStopTimerRef.current = setTimeout(() => {
       // ref 経由で最新の handleStop を呼ぶ
       if (handleStopRef.current) {
         handleStopRef.current()
       }
-    }, 4000)
+    }, 2500)
   }, [phase, startDrumroll, soundConfig])
 
   const handleStop = useCallback(async () => {
