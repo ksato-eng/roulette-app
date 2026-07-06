@@ -95,7 +95,7 @@ function calcTargetRotation(currentRotation, targetSeg, minExtraSpins = 5) {
 }
 
 const SPIN_VELOCITY = 0.25      // rad/frame、回転中の速度
-const DECEL_DURATION = 1000     // ms、減速時間（5秒回転 + 1秒減速 = 6秒で完全停止）
+const DECEL_DURATION = 1000     // ms、減速時間（4秒回転 + 1秒減速 = 5秒で完全停止）
 
 export default function Roulette({ prizes, pendingPrize, onAnimationComplete, canvasRef: externalCanvasRef }) {
   const internalRef = useRef(null)
