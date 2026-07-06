@@ -59,7 +59,7 @@ export default function DrawPage() {
 
     if (phase !== PHASE.SPINNING) return
     setPhase(PHASE.STOPPING)
-    stopDrumroll()
+    // ドラムロール音は減速中も続けるため、ここでは停止しない
 
     try {
       // サーバーで当選者を決定
@@ -72,7 +72,7 @@ export default function DrawPage() {
       setPhase(PHASE.SPINNING)
       startDrumroll()
     }
-  }, [phase, stopDrumroll, pickWinner, startDrumroll])
+  }, [phase, pickWinner, startDrumroll])
 
   // handleStop を ref に保存して、タイマーコールバックから常に最新版を呼べるように
   useEffect(() => {
@@ -84,6 +84,9 @@ export default function DrawPage() {
   const handleAnimationComplete = useCallback(async () => {
     const prize = pendingPrizeRef.current
     if (!prize) return
+
+    // ドラムロール音を停止
+    stopDrumroll()
 
     try {
       const data = await confirmDraw(prize.id)
@@ -109,7 +112,7 @@ export default function DrawPage() {
       console.error(e)
       setPhase(PHASE.IDLE)
     }
-  }, [confirmDraw, playWin, playLose])
+  }, [confirmDraw, stopDrumroll, playWin, playLose])
 
   const handleCloseResult = () => {
     setResultPrize(null)
