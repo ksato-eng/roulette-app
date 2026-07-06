@@ -19,6 +19,7 @@ export default function DrawPage() {
   // Rouletteコンポーネントのcanvas要素を受け取るref
   const canvasRef = useRef(null)
   const autoStopTimerRef = useRef(null)                    // 3秒自動停止用タイマー
+  const handleStopRef = useRef(null)                       // 最新の handleStop を参照
   const { startDrumroll, stopDrumroll, playWin, playLose } = useSound()
 
   useEffect(() => { fetchState() }, [fetchState])
@@ -46,7 +47,10 @@ export default function DrawPage() {
     // 3秒後に自動停止
     if (autoStopTimerRef.current) clearTimeout(autoStopTimerRef.current)
     autoStopTimerRef.current = setTimeout(() => {
-      handleStop()
+      // ref 経由で最新の handleStop を呼ぶ
+      if (handleStopRef.current) {
+        handleStopRef.current()
+      }
     }, 3000)
   }, [phase, startDrumroll, soundConfig])
 
@@ -69,6 +73,11 @@ export default function DrawPage() {
       startDrumroll()
     }
   }, [phase, stopDrumroll, pickWinner, startDrumroll])
+
+  // handleStop を ref に保存して、タイマーコールバックから常に最新版を呼べるように
+  useEffect(() => {
+    handleStopRef.current = handleStop
+  }, [handleStop])
 
   // アニメーション完了コールバック
   // ref 経由で prize を読むことで、useCallback の再生成タイミングに依存しない
