@@ -416,6 +416,19 @@ app.post('/api/reset', (req, res) => {
     new Date().toISOString()
   )
 
+  // 10回分より古いスナップショットを削除
+  const oldSnapshots = db.prepare(`
+    SELECT s.id
+    FROM reset_snapshots s
+    LEFT JOIN reset_history h ON s.id = h.snapshotId
+    ORDER BY h.resetAt DESC
+    LIMIT -1 OFFSET 10
+  `).all()
+
+  oldSnapshots.forEach(s => {
+    db.prepare("DELETE FROM reset_snapshots WHERE id = ?").run(s.id)
+  })
+
   // 実際にリセット
   db.prepare("UPDATE prizes SET remaining = initialCount").run()
   db.prepare("DELETE FROM history").run()
@@ -425,14 +438,14 @@ app.post('/api/reset', (req, res) => {
   res.json({ success: true, snapshotId })
 })
 
-// リセット履歴を取得
+// リセット履歴を取得（最新10回分）
 app.get('/api/reset-history', (req, res) => {
   const history = db.prepare(`
     SELECT h.id, h.snapshotId, h.resetAt, s.createdAt
     FROM reset_history h
     JOIN reset_snapshots s ON h.snapshotId = s.id
     ORDER BY h.resetAt DESC
-    LIMIT 20
+    LIMIT 10
   `).all()
   res.json(history)
 })
