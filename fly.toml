@@ -12,6 +12,8 @@ primary_region = "nrt"
 
 [env]
   NODE_ENV = "production"
+  PORT = "3000"
+  DATABASE_URL = "postgresql://neondb_owner:38OwWNQkVUxCcYpFpWOE6w@ep-morning-forest-axepirle-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 [http_service]
   internal_port = 3000
