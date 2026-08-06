@@ -234,7 +234,14 @@ function exportCSV(history) {
 }
 
 export default function AdminPage() {
-  const [authed, setAuthed] = useState(false)
+  // ローカルストレージから初期状態を読み込む
+  const [authed, setAuthed] = useState(() => {
+    try {
+      return localStorage.getItem('adminAuthed') === 'true'
+    } catch (e) {
+      return false
+    }
+  })
   const [pwInput, setPwInput] = useState('')
   const [pwError, setPwError] = useState(false)
   const { prizes, history, resultConfig, totalDrawCount, loading, fetchState, createPrize, updatePrize, deletePrize, clearHistory, resetAll, updateResultConfig, getResetHistory, restoreSnapshot } = useAppStore()
@@ -243,6 +250,15 @@ export default function AdminPage() {
   const [resultForm, setResultForm] = useState(null)
   const [resultEditing, setResultEditing] = useState(false)
   const [resetHistory, setResetHistory] = useState([])
+
+  // authed 状態をローカルストレージに保存
+  useEffect(() => {
+    try {
+      localStorage.setItem('adminAuthed', authed.toString())
+    } catch (e) {
+      console.error('Failed to save auth state:', e)
+    }
+  }, [authed])
 
   useEffect(() => {
     if (authed) {
@@ -311,6 +327,15 @@ export default function AdminPage() {
           <a href="/" className="text-xs text-gray-700 hover:text-blue-600 border border-gray-400 hover:border-blue-500 px-2 py-1 rounded transition-colors">
             ← 抽選へ
           </a>
+          <button
+            onClick={() => {
+              setAuthed(false)
+              setPwInput('')
+            }}
+            className="text-xs text-gray-700 hover:text-red-600 border border-gray-400 hover:border-red-500 px-2 py-1 rounded transition-colors"
+          >
+            ログアウト
+          </button>
         </div>
       </header>
 
