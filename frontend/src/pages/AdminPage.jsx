@@ -237,14 +237,18 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [pwInput, setPwInput] = useState('')
   const [pwError, setPwError] = useState(false)
-  const { prizes, history, resultConfig, totalDrawCount, loading, fetchState, createPrize, updatePrize, deletePrize, clearHistory, resetAll, updateResultConfig } = useAppStore()
+  const { prizes, history, resultConfig, totalDrawCount, loading, fetchState, createPrize, updatePrize, deletePrize, clearHistory, resetAll, updateResultConfig, getResetHistory, restoreSnapshot } = useAppStore()
   const [editingPrize, setEditingPrize] = useState(null)  // null | prize | 'new'
   const [activeTab, setActiveTab] = useState('prizes')
   const [resultForm, setResultForm] = useState(null)
   const [resultEditing, setResultEditing] = useState(false)
+  const [resetHistory, setResetHistory] = useState([])
 
   useEffect(() => {
-    if (authed) fetchState()
+    if (authed) {
+      fetchState()
+      loadResetHistory()
+    }
   }, [authed])
 
   useEffect(() => {
@@ -252,6 +256,15 @@ export default function AdminPage() {
       setResultForm({ ...resultConfig })
     }
   }, [resultConfig])
+
+  const loadResetHistory = async () => {
+    try {
+      const history = await getResetHistory()
+      setResetHistory(history)
+    } catch (e) {
+      console.error('Failed to load reset history:', e)
+    }
+  }
 
   const handleLogin = (e) => {
     e.preventDefault()
@@ -303,7 +316,7 @@ export default function AdminPage() {
 
       {/* タブ */}
       <div className="flex border-b border-gray-300 bg-gray-50 overflow-x-auto">
-        {[['prizes', '景品管理'], ['history', '抽選履歴'], ['result', '結果テキスト'], ['danger', 'リセット']].map(([id, label]) => (
+        {[['prizes', '景品管理'], ['history', '抽選履歴'], ['result', '結果テキスト'], ['restore', '復元'], ['danger', 'リセット']].map(([id, label]) => (
           <button key={id} onClick={() => setActiveTab(id)}
             className={`py-3 px-4 text-sm font-bold transition-colors whitespace-nowrap ${
               activeTab === id ? 'text-blue-600 border-b-2 border-blue-500' : 'text-gray-600 hover:text-gray-900'
@@ -498,6 +511,64 @@ export default function AdminPage() {
                   </button>
                 </div>
               </form>
+            )}
+          </div>
+        )}
+
+        {/* 復元タブ */}
+        {activeTab === 'restore' && (
+          <div className="space-y-3">
+            {/* 説明 */}
+            <div className="bg-blue-50 border border-blue-300 rounded-lg p-3 mb-4">
+              <h3 className="font-bold text-blue-900 text-sm mb-2">↩️ リセット実行履歴と復元</h3>
+              <ul className="text-xs text-gray-800 space-y-1">
+                <li>✓ リセット実行前の状態を自動保存します</li>
+                <li>✓ 以前のリセット前の状態に戻すことができます</li>
+                <li>✓ 景品設定、在庫数、履歴、累計回数すべてが復元されます</li>
+              </ul>
+            </div>
+
+            {resetHistory.length === 0 ? (
+              <div className="bg-gray-100 rounded-lg p-4 text-center text-gray-600">
+                <p className="text-sm">リセット実行履歴がありません</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                {resetHistory.map(item => {
+                  const resetDate = new Date(item.resetAt)
+                  const createdDate = new Date(item.createdAt)
+                  return (
+                    <div key={item.id} className="bg-slate-700 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex-1">
+                          <p className="text-sm text-white font-bold">
+                            リセット実行時刻：{resetDate.toLocaleString('ja-JP')}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            リセット前：{createdDate.toLocaleString('ja-JP')}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          if (confirm(`${createdDate.toLocaleString('ja-JP')} の状態に復元しますか？\nこの操作は元に戻せません。`)) {
+                            try {
+                              await restoreSnapshot(item.snapshotId)
+                              alert('復元完了しました')
+                              loadResetHistory()
+                            } catch (e) {
+                              alert('復元に失敗しました: ' + e.message)
+                            }
+                          }
+                        }}
+                        className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-sm"
+                      >
+                        この状態に復元
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
             )}
           </div>
         )}

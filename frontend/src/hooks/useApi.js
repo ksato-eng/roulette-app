@@ -34,4 +34,7 @@ export const api = {
 
   getResultConfig: () => req('GET', '/result-config'),
   updateResultConfig: (data) => req('POST', '/result-config', data),
+
+  getResetHistory: () => req('GET', '/reset-history'),
+  restoreSnapshot: (snapshotId) => req('POST', `/restore/${snapshotId}`),
 }

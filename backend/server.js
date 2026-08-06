@@ -56,6 +56,20 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS reset_snapshots (
+    id TEXT PRIMARY KEY,
+    createdAt TEXT NOT NULL,
+    prizesData TEXT NOT NULL,
+    historyData TEXT NOT NULL,
+    settingsData TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS reset_history (
+    id TEXT PRIMARY KEY,
+    snapshotId TEXT NOT NULL,
+    resetAt TEXT NOT NULL
+  );
 `)
 
 // マイグレーション：古いスキーマから新しいスキーマへ
@@ -373,10 +387,97 @@ app.delete('/api/history', (req, res) => {
 })
 
 app.post('/api/reset', (req, res) => {
+  // リセット前にスナップショットを保存
+  const snapshotId = uuidv4()
+  const prizes = db.prepare("SELECT * FROM prizes").all()
+  const history = db.prepare("SELECT * FROM history").all()
+  const allSettings = db.prepare("SELECT * FROM settings").all()
+
+  const snapshotData = {
+    prizes,
+    history,
+    settings: Object.fromEntries(allSettings.map(s => [s.key, s.value]))
+  }
+
+  db.prepare(
+    "INSERT INTO reset_snapshots (id, createdAt, prizesData, historyData, settingsData) VALUES (?, ?, ?, ?, ?)"
+  ).run(
+    snapshotId,
+    new Date().toISOString(),
+    JSON.stringify(prizes),
+    JSON.stringify(history),
+    JSON.stringify(allSettings.map(s => ({ key: s.key, value: s.value })))
+  )
+
+  // リセット履歴を記録
+  db.prepare("INSERT INTO reset_history (id, snapshotId, resetAt) VALUES (?, ?, ?)").run(
+    uuidv4(),
+    snapshotId,
+    new Date().toISOString()
+  )
+
+  // 実際にリセット
   db.prepare("UPDATE prizes SET remaining = initialCount").run()
   db.prepare("DELETE FROM history").run()
   db.prepare("UPDATE settings SET value='0' WHERE key='totalDrawCount'").run()
-  res.json({ success: true })
+
+  console.log(`🔄 Full reset executed. Snapshot ID: ${snapshotId}`)
+  res.json({ success: true, snapshotId })
+})
+
+// リセット履歴を取得
+app.get('/api/reset-history', (req, res) => {
+  const history = db.prepare(`
+    SELECT h.id, h.snapshotId, h.resetAt, s.createdAt
+    FROM reset_history h
+    JOIN reset_snapshots s ON h.snapshotId = s.id
+    ORDER BY h.resetAt DESC
+    LIMIT 20
+  `).all()
+  res.json(history)
+})
+
+// スナップショットから復元
+app.post('/api/restore/:snapshotId', (req, res) => {
+  const { snapshotId } = req.params
+  const snapshot = db.prepare("SELECT * FROM reset_snapshots WHERE id = ?").get(snapshotId)
+
+  if (!snapshot) {
+    return res.status(404).json({ error: 'Snapshot not found' })
+  }
+
+  try {
+    const prizes = JSON.parse(snapshot.prizesData)
+    const history = JSON.parse(snapshot.historyData)
+    const settings = JSON.parse(snapshot.settingsData)
+
+    // すべての prizes を削除して再挿入
+    db.prepare("DELETE FROM prizes").run()
+    const prizeStmt = db.prepare(
+      "INSERT INTO prizes (id, name, initialCount, remaining, weight, color, timeSlots, triggerAtCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    )
+    prizes.forEach(p => {
+      prizeStmt.run(p.id, p.name, p.initialCount, p.remaining, p.weight, p.color, p.timeSlots || '[]', p.triggerAtCount || null)
+    })
+
+    // 履歴を削除して再挿入
+    db.prepare("DELETE FROM history").run()
+    const histStmt = db.prepare("INSERT INTO history (id, count, prizeName, drawnAt) VALUES (?, ?, ?, ?)")
+    history.forEach(h => {
+      histStmt.run(h.id, h.count, h.prizeName, h.drawnAt)
+    })
+
+    // 設定を復元
+    settings.forEach(s => {
+      db.prepare("UPDATE settings SET value = ? WHERE key = ?").run(s.value, s.key)
+    })
+
+    console.log(`↩️  Restored from snapshot: ${snapshotId}`)
+    res.json({ success: true })
+  } catch (e) {
+    console.error('Restore error:', e)
+    res.status(500).json({ error: 'Failed to restore snapshot' })
+  }
 })
 
 // SPA のフォールバック：API 以外のパスは index.html を返す

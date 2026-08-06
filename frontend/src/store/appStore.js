@@ -86,4 +86,13 @@ export const useAppStore = create((set, get) => ({
     await api.updateResultConfig(data)
     set({ resultConfig: data })
   },
+
+  getResetHistory: async () => {
+    return await api.getResetHistory()
+  },
+
+  restoreSnapshot: async (snapshotId) => {
+    await api.restoreSnapshot(snapshotId)
+    await get().fetchState()
+  },
 }))
