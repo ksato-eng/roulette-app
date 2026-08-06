@@ -387,6 +387,10 @@ app.delete('/api/history', (req, res) => {
 })
 
 app.post('/api/reset', (req, res) => {
+  const timestamp = new Date().toISOString()
+  console.log(`🔴 RESET REQUEST RECEIVED at ${timestamp}`)
+  console.log(`   Stack trace:`, new Error().stack)
+
   // リセット前にスナップショットを保存
   const snapshotId = uuidv4()
   const prizes = db.prepare("SELECT * FROM prizes").all()
@@ -434,8 +438,9 @@ app.post('/api/reset', (req, res) => {
   db.prepare("DELETE FROM history").run()
   db.prepare("UPDATE settings SET value='0' WHERE key='totalDrawCount'").run()
 
-  console.log(`🔄 Full reset executed. Snapshot ID: ${snapshotId}`)
-  res.json({ success: true, snapshotId })
+  const completedAt = new Date().toISOString()
+  console.log(`✅ RESET COMPLETED at ${completedAt}. Snapshot ID: ${snapshotId}`)
+  res.json({ success: true, snapshotId, resetAt: completedAt })
 })
 
 // リセット履歴を取得（最新10回分）

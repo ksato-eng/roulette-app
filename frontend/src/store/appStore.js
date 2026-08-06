@@ -73,7 +73,10 @@ export const useAppStore = create((set, get) => ({
   },
 
   resetAll: async () => {
+    console.warn('🔴 RESET ACTION TRIGGERED at', new Date().toISOString())
+    console.warn('Stack:', new Error().stack)
     await api.resetAll()
+    console.warn('✅ RESET API CALL COMPLETED')
     await get().fetchState()
   },
 
