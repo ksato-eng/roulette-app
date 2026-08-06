@@ -1,19 +1,16 @@
 # Build stage
 FROM node:18-alpine
 
-WORKDIR /app/backend
+# Copy backend code
+COPY backend /app/backend
 
-# Copy package files first
-COPY backend/package*.json ./
+WORKDIR /app/backend
 
 # Install dependencies
 RUN npm ci --only=production
 
-# Copy backend code
-COPY backend ./
-
-# Copy frontend build
-COPY frontend/dist ../frontend/dist
+# Copy frontend build (static files)
+COPY frontend/dist /app/frontend/dist
 
 # Expose port
 EXPOSE 3000
