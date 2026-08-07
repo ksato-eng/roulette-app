@@ -1,7 +1,7 @@
 FROM node:18-alpine
 
 # Cache-busting ARG to force rebuild when needed
-ARG BUILD_DATE=2026-08-07T00-01
+ARG BUILD_DATE=2026-08-07T00-02
 
 # Set working directory
 WORKDIR /app/backend
@@ -10,7 +10,7 @@ WORKDIR /app/backend
 COPY backend/package*.json ./
 
 # Install backend dependencies
-RUN npm install --production
+RUN echo "Building at ${BUILD_DATE}" && npm install --production
 
 # Copy backend source code
 COPY backend ./
