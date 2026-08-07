@@ -1,7 +1,7 @@
 FROM node:18-alpine
 
 # Cache-busting ARG to force rebuild when needed
-ARG BUILD_DATE=unknown
+ARG BUILD_DATE=2026-08-07T00-01
 
 # Set working directory
 WORKDIR /app/backend
