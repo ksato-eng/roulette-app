@@ -553,6 +553,23 @@ app.post('/api/restore/:snapshotId', async (req, res) => {
   }
 })
 
+// Health check endpoint - useful for debugging configuration
+app.get('/api/health', (req, res) => {
+  const dbUrl = process.env.DATABASE_URL || 'Not set'
+  const maskedUrl = dbUrl !== 'Not set' ? dbUrl.replace(/:[^@]+@/, ':****@') : 'Not set'
+
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    port: PORT,
+    database: {
+      configured: !!process.env.DATABASE_URL,
+      maskedConnectionString: maskedUrl
+    }
+  })
+})
+
 // SPA のフォールバック
 app.get('*', (req, res) => {
   const indexPath = join(distPath, 'index.html')
