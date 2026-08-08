@@ -300,7 +300,15 @@ app.get('/api/prizes', async (req, res) => {
     res.json(result.rows.map(normalizePrize))
   } catch (error) {
     console.error('Error in /api/prizes:', error)
-    res.status(500).json({ error: error.message })
+    const dbUrl = process.env.DATABASE_URL || 'Not set'
+    const maskedUrl = dbUrl !== 'Not set' ? dbUrl.replace(/:[^@]+@/, ':****@') : 'Not set'
+    res.status(500).json({
+      error: error.message,
+      debug: {
+        dbConfigured: !!process.env.DATABASE_URL,
+        dbEndpoint: maskedUrl
+      }
+    })
   }
 })
 
