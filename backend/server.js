@@ -12,6 +12,12 @@ const PORT = process.env.PORT || 3001
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // Neon PostgreSQL接続
+console.log('🔍 DATABASE_URL is set:', !!process.env.DATABASE_URL)
+if (process.env.DATABASE_URL) {
+  const url = process.env.DATABASE_URL
+  const maskedUrl = url.replace(/:[^@]+@/, ':****@')
+  console.log('🔗 Connection string:', maskedUrl)
+}
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://neondb_owner:password@localhost:5432/neondb',
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
